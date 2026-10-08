@@ -30,7 +30,7 @@ user-invocable: true
 | `naming_spec()` | 取统一命名规范（模板 / artwork 命名 / 技术标签序 / 容器规则） | 否 |
 | `tmdb_search(title, year, media_type)` | TMDB 搜索候选 | 否 |
 | `tmdb_detail(tmdb_id, media_type)` | TMDB 详情 | 否 |
-| `build_plan(source, target_root, media_type, include_containers, drain_inbox)` | **只读**扫描并生成整理方案 | 否（只写本地方案存档） |
+| `build_plan(source, target_root, media_type, include_containers, drain_inbox, strict)` | **只读**扫描并生成整理方案；`strict=true` 严格归一（见第五节） | 否（只写本地方案存档） |
 | `preview_plan(plan_id)` | 查看方案全文（含每条动作） | 否 |
 | `execute_plan(plan_id, confirm)` | 执行方案 | **是** |
 | `scrape_dir(work_dir, media_type, tmdb_id, force, cleanup_legacy)` | 刮削海报/nfo | **是** |
@@ -144,6 +144,11 @@ audit_library("/115/01-电影")     → 逐作品报告偏差码 + 修改建议�
 - 无法归类的文件（`.txt`、压缩包等）→ **保持原位**，只在方案里报告
 
 对同一批文件重复跑 `build_plan` 应当得到接近零动作的方案 —— 这是健康信号。若发现大量改名的方案，先问用户是否真的要批量改名。
+
+**严格归一模式（`strict=true`）**：放弃上述「少改名」宽容 —— 作品目录强制带
+`{tmdbid-N}`、季目录强制按模板（`Season 01`）、已就位但命名不合规的文件
+（英文名/发布组混杂名）也按规范模板改名（剧集用 TMDB 真实集名）。
+涉及大量改名，**必须先把方案完整展示给用户确认**。
 
 ## 六、安全纪律（不可违背）
 
