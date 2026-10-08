@@ -1,17 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- 云盘 -->
-  <path d="M18 40h28a9 9 0 0 0 1.7-17.85A13 13 0 0 0 22.6 19.3A10.5 10.5 0 0 0 18 40Z"
-        fill="#4A90D9"/>
-  <!-- 胶片条（影视整理） -->
-  <g fill="#FFFFFF">
-    <rect x="14" y="38" width="36" height="14" rx="2"/>
-  </g>
-  <g fill="#4A90D9">
-    <rect x="17" y="41" width="4" height="3"/><rect x="24" y="41" width="4" height="3"/>
-    <rect x="31" y="41" width="4" height="3"/><rect x="38" y="41" width="4" height="3"/>
-    <rect x="45" y="41" width="2" height="3"/>
-    <rect x="17" y="46" width="4" height="3"/><rect x="24" y="46" width="4" height="3"/>
-    <rect x="31" y="46" width="4" height="3"/><rect x="38" y="46" width="4" height="3"/>
-    <rect x="45" y="46" width="2" height="3"/>
-  </g>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#54A3EE"/>
+      <stop offset="1" stop-color="#2B5FC9"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)"/>
+  <path d="M20 46h24a9 9 0 0 0 1.7-17.83A13 13 0 0 0 22.9 24.1A10 10 0 0 0 20 46Z" fill="#FFFFFF"/>
+  <path d="M28.5 30.5L38 36L28.5 41.5Z" fill="url(#bg)"/>
 </svg>

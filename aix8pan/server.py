@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
+from aix8pan import __version__
 from aix8pan.config import load_config, ensure_dirs
 from aix8pan.core import naming_spec
 from aix8pan.core.naming import NamingEngine
@@ -57,6 +58,7 @@ scraper = Scraper(_cfg, client, tmdb)
 auditor = Auditor(_cfg, client)
 
 server = MCPServer(name="aix8-pan",
+                   version=__version__,
                    title="AIX8-Pan 115 网盘整理",
                    instructions="115 网盘媒体整理助手：浏览/识别/规划/审计/刮削。整理走 Plan→确认→Execute 流程，绝不直接改文件。"
                                "命名规范以 naming_spec 为唯一标准；其中**电影规则已于 v2.0 冻结**"
@@ -359,5 +361,10 @@ async def _main():
     await server.run_stdio_async()
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Console entry（pyproject.toml → aix8-pan 命令）。"""
     asyncio.run(_main())
+
+
+if __name__ == "__main__":
+    main()

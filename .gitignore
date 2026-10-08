@@ -14,3 +14,6 @@ __pycache__/
 
 # 会话工作区
 .workbuddy/
+
+# 打包产物
+dist/

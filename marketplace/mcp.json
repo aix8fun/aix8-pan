@@ -3,7 +3,11 @@
     "aix8-pan": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["aix8-pan"],
+      "args": [
+        "--from",
+        "git+https://github.com/aix8fun/aix8-pan@v1.0.0",
+        "aix8-pan"
+      ],
       "env": {
         "OPENLIST_URL": "${OPENLIST_URL}",
         "OPENLIST_USER": "${OPENLIST_USER}",

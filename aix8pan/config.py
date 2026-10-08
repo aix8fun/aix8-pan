@@ -24,7 +24,24 @@ from typing import Any
 # 工程根 = aix8pan/ 的上一级
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config.json"
-DATA_DIR = PROJECT_ROOT / "data"
+
+
+def _resolve_data_dir() -> Path:
+    """数据目录锚定：
+    ① 环境变量 AIX8PAN_DATA_DIR 显式指定；
+    ② 开发模式（工程根有 .git 或 config.json）→ 工程内 data/；
+    ③ 发行模式（pip/uvx 装进 site-packages）→ ~/.aix8pan/，
+       避免写进 uv 缓存区（包升级即清空，方案存档会丢）。
+    """
+    env = os.environ.get("AIX8PAN_DATA_DIR")
+    if env:
+        return Path(env)
+    if (PROJECT_ROOT / ".git").exists() or CONFIG_PATH.exists():
+        return PROJECT_ROOT / "data"
+    return Path.home() / ".aix8pan"
+
+
+DATA_DIR = _resolve_data_dir()
 PLANS_DIR = DATA_DIR / "plans"
 CACHE_DIR = DATA_DIR / "cache"
 STATE_DIR = DATA_DIR / "state"
