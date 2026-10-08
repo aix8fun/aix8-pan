@@ -1,4 +1,4 @@
 # aix8-pan 第三方依赖（核心 aix8pan/ 包纯标准库；以下仅管线与 MCP 服务需要）
 requests>=2.28      # 管线脚本：nfo 读取 / 字幕下载 / 直链探测
 openpyxl>=3.1       # scripts/make_report2.py 生成核对表 xlsx
-mcp>=1.0            # aix8pan/server.py MCP 连接器（WorkBuddy 挂载用）
+mcp>=2.3            # aix8pan/server.py MCP 连接器（ToolAnnotations / outputSchema 需要 2.3+）

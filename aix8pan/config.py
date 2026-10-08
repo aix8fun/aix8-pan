@@ -1,4 +1,10 @@
-"""配置加载：工程根目录 config.json"""
+"""配置加载：工程根目录 config.json
+
+凭据优先级：环境变量 > config.json > 内置默认值。
+  AIX8PAN_OPENLIST_PASSWORD  OpenList 登录密码
+  AIX8PAN_TMDB_API_KEY       TMDB API Key
+config.json 不再存放凭据（纯环境描述，可分享可备份）。
+"""
 import json
 import os
 from pathlib import Path
@@ -10,9 +16,14 @@ DATA_DIR = PROJECT_ROOT / "data"
 PLANS_DIR = DATA_DIR / "plans"
 CACHE_DIR = DATA_DIR / "cache"
 
+_ENV_OVERRIDES = {
+    ("openlist", "password"): "AIX8PAN_OPENLIST_PASSWORD",
+    ("tmdb", "api_key"): "AIX8PAN_TMDB_API_KEY",
+}
+
 _DEFAULTS: dict[str, Any] = {
     "openlist": {
-        "base_url": "http://192.168.1.110:52525",
+        "base_url": "https://your-openlist.example.com",
         "username": "admin",
         "password": "",
         "op_interval_ms": 700,
@@ -45,7 +56,12 @@ def load_config(path: str | os.PathLike | None = None) -> dict:
     user_cfg: dict = {}
     if p.exists():
         user_cfg = json.loads(p.read_text(encoding="utf-8"))
-    return _deep_merge(_DEFAULTS, user_cfg)
+    cfg = _deep_merge(_DEFAULTS, user_cfg)
+    for (section, key), env_name in _ENV_OVERRIDES.items():
+        val = os.environ.get(env_name, "")
+        if val:
+            cfg.setdefault(section, {})[key] = val
+    return cfg
 
 
 def ensure_dirs() -> None:

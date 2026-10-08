@@ -1,12 +1,11 @@
 {
+  "_credentials": "凭据不写在本文件：AIX8PAN_OPENLIST_PASSWORD / AIX8PAN_TMDB_API_KEY 两个环境变量注入（WorkBuddy 用户配置于 ~/.workbuddy/mcp.json 的 aix8-pan.env；手动跑脚本可临时 export 或写回本文件对应字段）",
   "openlist": {
     "base_url": "https://your-openlist.example.com",
     "username": "admin",
-    "password": "<your-password>",
     "op_interval_ms": 700
   },
   "tmdb": {
-    "api_key": "<your-tmdb-api-key>",
     "api_host": "https://tmdb.aws360.cn",
     "image_host": "https://tmdb.aws360.cn",
     "language": "zh-CN",
@@ -17,7 +16,6 @@
     "tv": "/115/02-剧集",
     "anime": "/115/03-动画",
     "doc": "/115/04-纪录片",
-    "todo": "/115/AA-TODO",
     "tv_rural": "/115/12-乡村剧"
   },
   "naming": {
@@ -40,8 +38,7 @@
     ],
     "inbox": [
       "0-待整理",
-      "待整理",
-      "AA-TODO"
+      "待整理"
     ],
     "drain_inbox": true,
     "include_containers": false

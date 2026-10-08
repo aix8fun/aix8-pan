@@ -1,7 +1,7 @@
 """端到端写入测试（在网盘临时沙盒内执行，结束自动清理）
 
 覆盖：mkdir / move_dir / move / rename / upload(刮削) / cleanup_empty_dir
-沙盒根：/115/AA-TODO/.aix8pan-e2e    —— 测试结束整个删除，不触碰用户媒体库
+沙盒根：/115/.aix8pan-e2e    —— 测试结束整个删除，不触碰用户媒体库
 """
 import sys, json
 from pathlib import Path
@@ -14,7 +14,7 @@ from aix8pan.openlist import OpenListClient
 from aix8pan.planner import Planner
 from aix8pan.scraper import Scraper
 
-SANDBOX = "/115/AA-TODO/.aix8pan-e2e"
+SANDBOX = "/115/.aix8pan-e2e"
 INBOX = f"{SANDBOX}/inbox"
 TVINBOX = f"{SANDBOX}/tvinbox"
 LIB = f"{SANDBOX}/library"
@@ -176,9 +176,12 @@ def main():
     finally:
         print("[9] 清理沙盒")
         try:
-            c.remove("/115/AA-TODO", [".aix8pan-e2e"])
-            left = [i["name"] for i in c.list_all("/115/AA-TODO", refresh=True)]
-            print("   AA-TODO 剩余:", left)
+            c.remove("/115", [".aix8pan-e2e"])
+            try:
+                left = c.list_all(SANDBOX, refresh=True)
+                print("   沙盒残留:", left)
+            except Exception:
+                print("   沙盒已删除")
         except Exception as ex:
             print("   清理失败:", ex)
 

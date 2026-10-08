@@ -11,6 +11,12 @@
 安全铁律：
   - execute_plan 需要用户在对话中明确确认后才可传 confirm=true
   - 所有写操作经 OpenList 客户端限速（默认 700ms/操作）
+
+输出契约：
+  - 全部工具返回统一信封 Result（TypedDict）——成功 {ok: True, data: ...}，
+    失败 {ok: False, error: ...}；SDK 据此发布 outputSchema 并把结果写入
+    structuredContent（宿主可结构化消费），文本通道保留同样的 JSON（向后兼容）。
+  - data 的具体形态见各工具 description；人类可读的摘要放在 data.detail 字段。
 """
 from __future__ import annotations
 
@@ -19,10 +25,12 @@ import json
 import sys
 import traceback
 from pathlib import Path
+from typing import Any, NotRequired, TypedDict
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mcp.server.mcpserver import MCPServer
+from mcp.types import ToolAnnotations
 
 from aix8pan import naming_spec
 from aix8pan.auditor import Auditor
@@ -55,18 +63,51 @@ server = MCPServer(name="aix8-pan",
                                "（2026-10-07），处理电影一律按冻结条款，不得擅自「优化」命名形态。")
 
 
-def _ok(data) -> str:
-    return json.dumps({"ok": True, "data": data}, ensure_ascii=False, indent=1, default=str)
+class Result(TypedDict):
+    """统一返回信封（同时是 14 个工具的 outputSchema 根）。
+
+    成功 {ok: True, data: ...}；失败 {ok: False, error: ...}。
+    不用 Union[成功, 失败] 两个 TypedDict —— Union 返回会被 SDK 包进
+    {"result": ...} 包装层，structuredContent 形态变丑。
+    """
+    ok: bool
+    data: NotRequired[Any]
+    error: NotRequired[str]
 
 
-def _err(msg: str) -> str:
-    return json.dumps({"ok": False, "error": str(msg)[:500]}, ensure_ascii=False)
+def _jsonable(data: Any) -> Any:
+    """保证 structuredContent 是合法 JSON（datetime/Path 等兜底转 str）。"""
+    return json.loads(json.dumps(data, ensure_ascii=False, default=str))
+
+
+def _ok(data: Any) -> Result:
+    return {"ok": True, "data": _jsonable(data)}
+
+
+def _err(msg: object) -> Result:
+    return {"ok": False, "error": str(msg)[:500]}
+
+
+# MCP 工具注解：宿主据此做权限提示与审批策略
+# 纯读（含网盘/TMDB 查询，不改任何状态）
+A_READONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False,
+                             idempotentHint=True, openWorldHint=True)
+# 只写本地方案文件，不碰网盘
+A_PLAN = ToolAnnotations(readOnlyHint=False, destructiveHint=False,
+                         idempotentHint=False, openWorldHint=True)
+# 写网盘（移动/改名/删除），失败可断点续跑（幂等）
+A_EXECUTE = ToolAnnotations(readOnlyHint=False, destructiveHint=True,
+                            idempotentHint=True, openWorldHint=True)
+# 写网盘（上传海报/nfo；cleanup_legacy 会删旧图），已存在自动跳过（幂等）
+A_SCRAPE = ToolAnnotations(readOnlyHint=False, destructiveHint=True,
+                           idempotentHint=True, openWorldHint=True)
 
 
 # ---------------- 浏览 ----------------
 
-@server.tool(description="列出网盘目录内容。path 如 /115/01-电影。refresh=true 强刷缓存。")
-def list_dir(path: str, refresh: bool = False) -> str:
+@server.tool(description="列出网盘目录内容。path 如 /115/01-电影。refresh=true 强刷缓存。",
+             annotations=A_READONLY)
+def list_dir(path: str, refresh: bool = False) -> Result:
     try:
         items = client.list_all(path, refresh=refresh)
         out = [{"name": i.get("name"), "is_dir": i.get("is_dir"),
@@ -76,8 +117,9 @@ def list_dir(path: str, refresh: bool = False) -> str:
         return _err(e)
 
 
-@server.tool(description="在指定目录下按关键字搜索（当前层及子层）。")
-def search_files(parent: str, keywords: str) -> str:
+@server.tool(description="在指定目录下按关键字搜索（当前层及子层）。",
+             annotations=A_READONLY)
+def search_files(parent: str, keywords: str) -> Result:
     try:
         items = client.search(parent, keywords)
         return _ok([{"name": i.get("name"), "parent": i.get("parent"),
@@ -86,13 +128,15 @@ def search_files(parent: str, keywords: str) -> str:
         return _err(e)
 
 
-@server.tool(description="获取配置的网盘路径映射（电影库/剧集库/待整理区等）。")
-def get_paths() -> str:
+@server.tool(description="获取配置的网盘路径映射（电影库/剧集库/动画库等）。",
+             annotations=A_READONLY)
+def get_paths() -> Result:
     return _ok(_cfg.get("paths") or {})
 
 
-@server.tool(description="取文件下载直链（供 ffprobe 探测等用途）。")
-def get_download_url(path: str) -> str:
+@server.tool(description="取文件下载直链（供 ffprobe 探测等用途）。",
+             annotations=A_READONLY)
+def get_download_url(path: str) -> Result:
     try:
         return _ok({"url": client.get_download_url(path)})
     except Exception as e:
@@ -102,21 +146,24 @@ def get_download_url(path: str) -> str:
 # ---------------- 识别 ----------------
 
 @server.tool(description="查看统一命名规范（模板 / artwork 命名 / 技术标签顺序 / 容器规则）。"
-                         "任何命名疑问都以此为准。")
-def naming_spec_tool() -> str:
+                         "任何命名疑问都以此为准。",
+             annotations=A_READONLY)
+def naming_spec_tool() -> Result:
     return _ok(naming_spec.spec_dict())
 
 
-@server.tool(description="解析文件名：标题/年份/季集/技术标签/TMDB ID。用于预判整理效果。")
-def parse_name(name: str, is_dir: bool = False) -> str:
+@server.tool(description="解析文件名：标题/年份/季集/技术标签/TMDB ID。用于预判整理效果。",
+             annotations=A_READONLY)
+def parse_name(name: str, is_dir: bool = False) -> Result:
     p = parse_media_name(name, is_dir=is_dir)
     return _ok({"title": p.title, "year": p.year, "season": p.season, "episode": p.episode,
                 "tmdb_id": p.tmdb_id, "tech": p.tech, "resolution": p.resolution,
                 "is_media": p.is_media, "is_companion": p.is_companion, "ext": p.ext})
 
 
-@server.tool(description="TMDB 搜索。media_type: movie/tv/auto。返回候选列表。")
-def tmdb_search(title: str, year: str = "", media_type: str = "auto") -> str:
+@server.tool(description="TMDB 搜索。media_type: movie/tv/auto。返回候选列表。",
+             annotations=A_READONLY)
+def tmdb_search(title: str, year: str = "", media_type: str = "auto") -> Result:
     try:
         res = tmdb.search(title, year, media_type)
         out = {}
@@ -131,8 +178,9 @@ def tmdb_search(title: str, year: str = "", media_type: str = "auto") -> str:
         return _err(e)
 
 
-@server.tool(description="TMDB 详情（含季信息/图片路径）。")
-def tmdb_detail(tmdb_id: str, media_type: str) -> str:
+@server.tool(description="TMDB 详情（含季信息/图片路径）。",
+             annotations=A_READONLY)
+def tmdb_detail(tmdb_id: str, media_type: str) -> Result:
     try:
         d = tmdb.detail(tmdb_id, media_type)
         return _ok(d)
@@ -142,17 +190,18 @@ def tmdb_detail(tmdb_id: str, media_type: str) -> str:
 
 # ---------------- 整理（Plan → 确认 → Execute） ----------------
 
-@server.tool(description="【只读】扫描待整理目录生成整理方案 Plan（不改任何文件）。"
-                         "source 如 /115/AA-TODO/movies；target_root 省略则按媒体类型自动选库。"
+@server.tool(description="【只读】扫描散乱目录生成整理方案 Plan（不改任何文件）。"
+                         "source 如 /115/云下载；target_root 省略则按媒体类型自动选库。"
                          "media_type: movie/tv/auto。"
                          "include_containers=true 时下钻「合集/专辑/（系列）」内部；"
                          "drain_inbox=true（默认）时把收件箱 0-待整理 里的作品一并搬走；"
                          "normalize_names=true（默认）时纠正明确违规的存量名"
                          "（旧式 {tmdb-N} 标识 → {tmdbid-N}；文件名里的 ID 与方括号标签）。"
-                         "返回方案摘要与 plan_id。")
+                         "返回方案摘要与 plan_id。",
+             annotations=A_PLAN)
 def build_plan(source: str, target_root: str = "", media_type: str = "auto",
                include_containers: bool = False, drain_inbox: bool = True,
-               normalize_names: bool = True) -> str:
+               normalize_names: bool = True) -> Result:
     try:
         plan = planner.build_plan(source, target_root or None, media_type,
                                   include_containers=include_containers,
@@ -186,8 +235,9 @@ def build_plan(source: str, target_root: str = "", media_type: str = "auto",
         return _err(e)
 
 
-@server.tool(description="查看已生成的 Plan 详情（含全部动作）。")
-def preview_plan(plan_id: str) -> str:
+@server.tool(description="查看已生成的 Plan 详情（含全部动作）。",
+             annotations=A_READONLY)
+def preview_plan(plan_id: str) -> Result:
     try:
         plan = planner.load_plan(plan_id)
         return _ok({"status": plan["status"], "source": plan["source"],
@@ -201,8 +251,9 @@ def preview_plan(plan_id: str) -> str:
 
 
 @server.tool(description="【危险】执行整理 Plan。必须先向用户展示 preview_plan 结果并获得明确确认，"
-                         "用户同意后才能传 confirm=true。默认 confirm=false 只做预检。")
-def execute_plan(plan_id: str, confirm: bool = False) -> str:
+                         "用户同意后才能传 confirm=true。默认 confirm=false 只做预检。",
+             annotations=A_EXECUTE)
+def execute_plan(plan_id: str, confirm: bool = False) -> Result:
     try:
         plan = planner.load_plan(plan_id)
         result = executor.execute(plan, confirm=confirm)
@@ -219,9 +270,10 @@ def execute_plan(plan_id: str, confirm: bool = False) -> str:
                          "命名遵循规范 —— 电影用前缀式（{主文件主体}-poster.jpg，nfo 与主文件同名），"
                          "剧集用无前缀式（poster.jpg / clearlogo.png / tvshow.nfo）。"
                          "work_dir 如 /115/01-电影/沙丘2 (2024) {tmdbid-693134}。"
-                         "cleanup_legacy=true 时删掉电影目录里旧式无前缀图片，完成形态归一。")
+                         "cleanup_legacy=true 时删掉电影目录里旧式无前缀图片，完成形态归一。",
+             annotations=A_SCRAPE)
 def scrape_dir(work_dir: str, media_type: str = "auto", tmdb_id: str = "",
-               force: bool = False, cleanup_legacy: bool = False) -> str:
+               force: bool = False, cleanup_legacy: bool = False) -> Result:
     try:
         result = scraper.scrape(work_dir, media_type, tmdb_id, force, cleanup_legacy)
         return _ok(result)
@@ -234,9 +286,10 @@ def scrape_dir(work_dir: str, media_type: str = "auto", tmdb_id: str = "",
 
 @server.tool(description="【只读】审计网盘目录与命名规范的偏差，输出整改清单。"
                          "root 如 /115/01-电影（会下钻合集/专辑/（系列））。"
-                         "media_type: movie/tv/auto。报告包含问题码、详情与修改建议。")
+                         "media_type: movie/tv/auto。报告包含问题码、详情与修改建议。",
+             annotations=A_READONLY)
 def audit_library(root: str, media_type: str = "auto",
-                  include_containers: bool = True) -> str:
+                  include_containers: bool = True) -> Result:
     try:
         result = auditor.audit(root, media_type, include_containers)
         s = result["summary"]
@@ -263,22 +316,27 @@ def audit_library(root: str, media_type: str = "auto",
 
 # ---------------- 运维 ----------------
 
-@server.tool(description="健康检查：OpenList 连通性 + TMDB 可用性 + 挂载根目录。")
-def health_check() -> str:
+@server.tool(description="健康检查：OpenList 连通性 + TMDB 可用性 + 挂载根目录。",
+             annotations=A_READONLY)
+def health_check() -> Result:
     issues = []
-    try:
-        items = client.list_dir("/115", refresh=False)
-        top = [i["name"] for i in items if i.get("is_dir")][:10]
-    except Exception as e:
-        issues.append(f"OpenList: {e}")
-        top = []
-    if not tmdb.available:
-        issues.append("TMDB: 未配置 api_key")
+    hint = "（凭据走环境变量，配置于 ~/.workbuddy/mcp.json 的 aix8-pan.env）"
+    top: list = []
+    if _cfg["openlist"].get("password"):
+        try:
+            items = client.list_dir("/115", refresh=False)
+            top = [i["name"] for i in items if i.get("is_dir")][:10]
+        except Exception as e:
+            issues.append(f"OpenList: {e}")
     else:
+        issues.append(f"OpenList: 未配置密码 {hint}")
+    if _cfg["tmdb"].get("api_key"):
         try:
             tmdb.search("test", "", "movie")
         except Exception as e:
             issues.append(f"TMDB: {e}")
+    else:
+        issues.append(f"TMDB: 未配置 api_key {hint}")
     return _ok({"ok": len(issues) == 0, "issues": issues, "root_dirs": top})
 
 

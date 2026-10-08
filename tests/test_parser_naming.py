@@ -1,14 +1,18 @@
 """解析器 / 命名引擎 / 命名规范 单元测试
 
-样本全部取自用户 115 网盘 tMM 整理存量（真实字节核对过）：
+样本全部取自用户 115 网盘 tMM 整理存量（真实字节核对过），目标形态为 v2.2 冻结规范：
   目录  大黄蜂 (2018) {tmdbid-424783}
-  文件  大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos.iso
-  海报  大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos-poster.jpg   ← 前缀式
-  海报  大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos-clearlogo.png
-  nfo   大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos.nfo          ← 与主文件同名
-  剧集  白夜追凶 (2017) / Season 1 / 白夜追凶 - S01E01 - 第1集.mp4
+  文件  大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos].iso
+  海报  大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos]-poster.jpg   ← 前缀式
+  海报  大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos]-clearlogo.png
+  nfo   大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos].nfo          ← 与主文件同名
+  剧集目录  三国演义 (1994) {tmdbid-72645}                        ← v2.2 起带 ID
+  剧集文件  三国演义 - S01E01 - 桃园三结义 [2160p WEB-DL H265 AAC].mp4
   剧集  poster.jpg / fanart.jpg / season01-poster.jpg / tvshow.nfo（无前缀）
   容器  变形金刚（系列） / 漫威宇宙（主线）
+
+存量旧形态（无方括号、`白夜追凶 - S01E01 - 第1集.mp4`）按「少改名」原则不追改，
+解析器仍须正确识别（见 test_parse_tv_file 等）。
 """
 import sys
 from pathlib import Path
@@ -22,12 +26,13 @@ from aix8pan.parser import (
 )
 from aix8pan.naming import NamingEngine, latin_title, sanitize
 
+# 与 naming_spec v2.2 事实源一致的模板（不要写旧形态，否则测试会与冻结规范漂移）
 NAMING_CFG = {
     "movie_folder_template": "{title} ({year}) {tmdbid_tag}",
-    "tv_folder_template": "{title} ({year})",
+    "tv_folder_template": "{title} ({year}) {tmdbid_tag}",
     "season_folder_template": "Season {season:02d}",
-    "movie_file_template": "{title} {original} ({year}) {tech}",
-    "tv_file_template": "{title} - {season_ep} - {episode_title}",
+    "movie_file_template": "{title} {original} ({year}) [{tech}]",
+    "tv_file_template": "{title} - {season_ep} - {episode_title} [{tech}]",
 }
 
 
@@ -159,22 +164,20 @@ def test_naming_movie():
                        tech="2160p TrueHD Atmos", tmdb_id="693134")
     assert eng.folder_name(v, "movie") == "沙丘2 (2024) {tmdbid-693134}", eng.folder_name(v, "movie")
     name = eng.movie_file_name(v, ".mkv")
-    assert name == "沙丘2 Dune - Part Two (2024) 2160p TrueHD Atmos.mkv", name
+    assert name == "沙丘2 Dune - Part Two (2024) [2160p TrueHD Atmos].mkv", name
 
 
 def test_naming_movie_matches_existing_library():
-    """命名引擎输出必须与存量逐字一致 —— 这是「零重命名」的前提。"""
+    """命名引擎输出必须与存量逐字一致 —— 这是「零重命名」的前提（v2.2 方括号形态）。"""
     eng = NamingEngine(NAMING_CFG)
     v = eng.build_vars(title="大黄蜂", original="Bumblebee", year="2018",
                        tech="2160p TrueHD Atmos", tmdb_id="424783")
+    stem = "大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos]"
     assert eng.folder_name(v, "movie") == "大黄蜂 (2018) {tmdbid-424783}"
-    assert eng.movie_file_name(v, ".iso") == "大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos.iso"
-    assert eng.artwork_name("poster", "大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos") == \
-        "大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos-poster.jpg"
-    assert eng.artwork_name("clearlogo", "大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos") == \
-        "大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos-clearlogo.png"
-    assert eng.nfo_name("movie", "大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos") == \
-        "大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos.nfo"
+    assert eng.movie_file_name(v, ".iso") == stem + ".iso"
+    assert eng.artwork_name("poster", stem) == stem + "-poster.jpg"
+    assert eng.artwork_name("clearlogo", stem) == stem + "-clearlogo.png"
+    assert eng.nfo_name("movie", stem) == stem + ".nfo"
 
 
 def test_naming_tv():
@@ -186,12 +189,14 @@ def test_naming_tv():
     assert eng.folder_name(v, "tv") == "白夜追凶 (2017)"
 
 
-def test_naming_tv_no_id_in_folder():
-    """剧集目录规范不带 ID（存量 59/59 皆如此）。"""
+def test_naming_tv_id_in_folder():
+    """剧集目录 v2.2 起带 {tmdbid-N}（与电影库统一）；无 ID 时不留空括号。"""
     eng = NamingEngine(NAMING_CFG)
     v = eng.build_vars(title="白夜追凶", year="2017", tmdb_id="12345")
-    assert eng.folder_name(v, "tv") == "白夜追凶 (2017)"
+    assert eng.folder_name(v, "tv") == "白夜追凶 (2017) {tmdbid-12345}"
     assert eng.folder_name(v, "movie") == "白夜追凶 (2017) {tmdbid-12345}"
+    v2 = eng.build_vars(title="白夜追凶", year="2017")
+    assert eng.folder_name(v2, "tv") == "白夜追凶 (2017)"
 
 
 def test_naming_empty_tech():
@@ -398,7 +403,7 @@ def test_unprefixed_artwork_and_nfo_owner():
 def test_multi_version_artwork_roundtrip():
     """多版本目录重命名时，每个版本的 artwork 各自跟随，不得并成一个前缀。"""
     eng = NamingEngine({"movie_folder_template": "{title} ({year}) {tmdbid_tag}",
-                        "movie_file_template": "{title} {original} ({year}) {tech}"})
+                        "movie_file_template": "{title} {original} ({year}) [{tech}]"})
     stems = [_STEM_1080, _STEM_2160]
     for st in stems:
         owner = spec.artwork_owner(f"{st}-poster.jpg", stems)

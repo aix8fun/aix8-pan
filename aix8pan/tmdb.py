@@ -56,8 +56,10 @@ class TMDBClient:
         try:
             d = json.loads(p.read_text(encoding="utf-8"))
         except Exception:
+            p.unlink(missing_ok=True)   # 损坏的缓存文件顺手清掉
             return None
         if time.time() - d.get("_ts", 0) > self.cache_ttl:
+            p.unlink(missing_ok=True)   # 过期即删，缓存目录不无限膨胀
             return None
         return d.get("data")
 

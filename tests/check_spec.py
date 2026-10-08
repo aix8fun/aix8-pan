@@ -33,7 +33,7 @@ from aix8pan.parser import parse_media_name                  # noqa: E402
 
 SPEC_MD = ROOT / "SPEC.md"
 README_MD = ROOT / "README.md"
-SKILL_MD = Path.home() / ".workbuddy" / "skills" / "pan115-butler" / "SKILL.md"
+SKILL_MD = Path.home() / ".workbuddy" / "skills" / "aix8-pan" / "SKILL.md"
 CONFIG_JSON = ROOT / "config.json"
 
 # 存量样板（黄金样例的锚点，与 SPEC.md / 单测同一份真实字节）
@@ -200,14 +200,23 @@ def check_docs() -> None:
     doc_has(g, SPEC_MD, "DTSHD-MA")
     doc_has(g, SPEC_MD, "{tmdbid_tag}")
     doc_has(g, SPEC_MD, spec.MOVIE_FOLDER_TEMPLATE)
+    # v2.2 关键形态：方括号技术段 + 剧集目录带 ID（防止速查表停留在旧版本）
+    doc_has(g, SPEC_MD, spec.TV_FOLDER_TEMPLATE)
+    doc_has(g, SPEC_MD, spec.TV_FILE_TEMPLATE)
+    doc_has(g, SPEC_MD, "大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos].iso")
+    doc_has(g, SPEC_MD, "三国演义 (1994) {tmdbid-72645}")
 
     doc_has(g, SKILL_MD, "冻结")
     doc_has(g, SKILL_MD, "clearlogo")
     doc_has(g, SKILL_MD, "tmdbid")
+    doc_has(g, SKILL_MD, "大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos].iso")
+    doc_has(g, SKILL_MD, "三国演义 (1994) {tmdbid-72645}")
 
     doc_has(g, README_MD, "clearlogo")
     doc_has(g, README_MD, "DTSHD-MA")
     doc_has(g, README_MD, "tmdbid")
+    doc_has(g, README_MD, "大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos].iso")
+    doc_has(g, README_MD, "三国演义 (1994) {tmdbid-72645}")
 
 
 # ═══════════════ C. 配置一致 ═══════════════
