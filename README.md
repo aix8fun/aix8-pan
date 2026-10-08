@@ -18,7 +18,7 @@ WorkBuddy 对话界面
    │
    └── MCP 连接器: aix8-pan      ← 14 个原子工具（能力层）
           │
-          ├── naming_spec        命名规范单一事实源（模板/artwork/技术标签序；电影已冻结 v2.0）
+          ├── naming_spec        命名规范单一事实源（模板/artwork/技术标签序；电影/剧集已冻结 v2.2）
           ├── OpenListClient     列目录 / 建目录 / 移动 / 改名 / 上传 / 直链 / 删除
           ├── TMDBClient         搜索 / 详情 / 单集 / 图片下载
           ├── Planner            只读扫描 → 解析 → 匹配 → 生成方案 JSON
@@ -35,7 +35,7 @@ WorkBuddy 对话界面
 ```bash
 cd ~/WorkBuddy/aix8-pan
 
-# 1. 自检
+# 1. 自检（连接信息走环境变量，见下方「部署引导」）
 python3 -c "import sys;sys.path.insert(0,'.');from aix8pan.config import load_config;from aix8pan.core.openlist import OpenListClient as C;from aix8pan.core.tmdb import TMDBClient as T;c=load_config();
 ol=c['openlist'];t=c['tmdb'];print(len(C(ol['base_url'],ol['username'],ol['password']).list_all('/115')),'项根目录');print('TMDB ok' if T(t['api_key'],t['api_host'],t['image_host']).available else 'TMDB 未配置')"
 
@@ -112,17 +112,17 @@ python3 scripts/fix_issues.py --execute
 
 每次改名/移动都是一次网盘 API 调用，几千次会触发限流。因此整理器**不追求把库刷成统一格式**：
 
-| 情形                     | 行为                             |
-| ---------------------- | ------------------------------ |
-| 目标库已有同作品目录             | 复用其名字（不重建、不改名）                 |
-| 源目录名已合规 `标题 (年份)`      | **整目录一次搬移**（1 个 API 调用），内部文件不动 |
-| 文件已在正确目录且身份对得上         | 跳过（英文名、格式简化版都不动）               |
-| 文件不在正确位置 / 身份对不上       | 才改名                            |
-| artwork 形态非规范          | **只在本来就要动这个目录时**顺手归一（不额外制造重命名） |
-| 组织容器（合集/专辑/（系列）/（主线））  | 默认不动，只报告                       |
-| 收件箱（`0-待整理`/`待整理`） | 默认排空，内部作品搬进目标库                   |
-| 无法归类的文件（.txt、压缩包）      | 保持原位，仅在方案中报告                   |
-| 重复执行同一方案               | 断点续跑，已完成的动作跳过                  |
+| 情形                    | 行为                             |
+| --------------------- | ------------------------------ |
+| 目标库已有同作品目录            | 复用其名字（不重建、不改名）                 |
+| 源目录名已合规 `标题 (年份)`     | **整目录一次搬移**（1 个 API 调用），内部文件不动 |
+| 文件已在正确目录且身份对得上        | 跳过（英文名、格式简化版都不动）               |
+| 文件不在正确位置 / 身份对不上      | 才改名                            |
+| artwork 形态非规范         | **只在本来就要动这个目录时**顺手归一（不额外制造重命名） |
+| 组织容器（合集/专辑/（系列）/（主线）） | 默认不动，只报告                       |
+| 收件箱（`0-待整理`/`待整理`）    | 默认排空，内部作品搬进目标库                 |
+| 无法归类的文件（.txt、压缩包）     | 保持原位，仅在方案中报告                   |
+| 重复执行同一方案              | 断点续跑，已完成的动作跳过                  |
 
 实测：对已整理的剧集（白夜追凶 61 文件、三国演义 84 文件）重新规划 = **0 个动作**。
 
@@ -153,135 +153,94 @@ python3 scripts/fix_issues.py --execute
 
 ## 部署引导（新用户三步走）
 
-本工具**不直连 115**：所有文件操作走你自部署的 OpenList 网关，元数据走 TMDB。
-首次使用按下面三步配好，再跑 `health_check` 验证。
+本工具不直连 115，所有文件操作经 **[OpenList](https://github.com/OpenListTeam/OpenList)**（自建网盘桥接）完成；元数据与海报来自 **TMDB**。新环境按下面三步配置：
 
-### 第 1 步：部署 OpenList 并挂载 115 网盘
-
-OpenList 是开源自建网盘网关（<https://github.com/OpenListTeam/OpenList>），
-负责把 115 的开放接口转成标准 REST API：
+**第 1 步 · 部署 OpenList 并挂载 115 网盘**
 
 ```bash
-# Docker 一条命令起服务（数据落在 ./openlist-data）
 docker run -d --name openlist -p 5244:5244 \
-  -v ./openlist-data:/opt/openlist/data \
-  openlistteam/openlist:latest
-
-# 拿到初始管理员密码
-docker logs openlist 2>&1 | grep password
+  -v /your/data:/opt/openlist/data openlist/openlist:latest
 ```
 
-然后浏览器打开 `http://<你的IP>:5244`：
+打开 `http://<主机>:5244` → 管理 → 存储 → 添加「115 Open」驱动 → 扫码授权，
+挂载路径填 `/115`。详见 [OpenList 文档](https://github.com/OpenListTeam/OpenList)。
 
-1. 用 admin + 初始密码登录（**改掉初始密码**）
-2. 「存储 → 添加存储」，驱动选 `115 Open`（或 `115 网盘`），挂载路径填 `/115`，
-   按页面引导用 115 App 扫码完成授权
-3. 验证：文件管理里能看到你 115 网盘的目录树即成功
+**第 2 步 · 准备 TMDB API Key**
 
-### 第 2 步：准备 TMDB API Key
+到 [themoviedb.org](https://www.themoviedb.org/settings/api) 申请（32 位）。
+国内直连不稳定时，可自建代理（参考 [tmdb-proxy](https://github.com/aix8fun/tmdb-proxy)）。
 
-- 官方：<https://www.themoviedb.org/settings/api> 注册开发者账号免费申请（v3 API Key，32 位）
-- 国内直连官方 API 可能不稳，可自建代理（参考 <https://github.com/aix8fun/tmdb-proxy>）
-  或使用你可用的镜像地址
+**第 3 步 · 在 MCP 配置里填 5 个环境变量**
 
-### 第 3 步：在 MCP 配置里填 5 个环境变量
-
-WorkBuddy 用户编辑 `~/.workbuddy/mcp.json`，在 `aix8-pan` 条目的 `env` 里填：
+在 `~/.workbuddy/mcp.json` 的 `aix8-pan` 条目 `env` 中配置：
 
 ```json
-"aix8-pan": {
-  "command": "<python>",
-  "args": ["<工程路径>/aix8pan/server.py"],
-  "cwd": "<工程路径>",
-  "env": {
-    "OPENLIST_URL":   "https://pan.example.com",
-    "OPENLIST_USER":  "admin",
-    "OPENLIST_PASS":  "你的OpenList密码",
-    "TMDB_HOST":      "https://api.themoviedb.org",
-    "TMDB_API_KEY":   "你的32位TMDB Key"
-  }
+"env": {
+  "OPENLIST_URL":   "https://pan.example.com",
+  "OPENLIST_USER":  "admin",
+  "OPENLIST_PASS":  "你的OpenList密码",
+  "TMDB_HOST":      "https://api.themoviedb.org",
+  "TMDB_API_KEY":   "你的32位TMDB Key"
 }
 ```
 
-新开会话后在对话里说「跑一下 health_check」——全绿即可开始使用；
-有红项时 issues 里会写明缺哪个变量、去哪配。
+- `TMDB_HOST` 同时供 API 与图片地址（默认官方；用代理则填代理地址）
+- 优先级：**环境变量 > config.json > 内置默认**
+- 配好后新开会话，说「健康检查」即可用 `health_check` 验证连通性——未配齐时它会分阶段指引缺什么、去哪配
 
 ## 配置
 
-**连接信息全部走环境变量**（上架分发型态，不依赖任何本机文件）：
+**凭据走环境变量，绝不进 config.json**（config.json 是纯本机偏好，可分享可备份，且可选——不创建也能跑）：
 
-| 环境变量 | 用途 | 示例 |
-|---|---|---|
-| `OPENLIST_URL` | OpenList 服务地址 | `https://pan.aix8.fun` |
-| `OPENLIST_USER` | OpenList 用户名 | `admin` |
-| `OPENLIST_PASS` | OpenList 密码 | `your-password` |
-| `TMDB_HOST` | TMDB API 地址（官方或代理，同时供 API 与图片） | `https://api.themoviedb.org` |
-| `TMDB_API_KEY` | TMDB API Key（32 位） | `1a05…e576` |
+| 环境变量 | 用途 |
+|---|---|
+| `OPENLIST_URL` | OpenList 服务地址（如 `https://pan.aix8.fun`） |
+| `OPENLIST_USER` | OpenList 用户名（如 `admin`） |
+| `OPENLIST_PASS` | OpenList 密码 |
+| `TMDB_HOST` | TMDB API 地址（官方或自建代理） |
+| `TMDB_API_KEY` | TMDB API Key（32 位） |
 
-优先级：**环境变量 > `config.json` > 内置默认值**。
-`config.json` 是**可选的**本机偏好文件（库存放路径 / 命名模板微调 / 限速），
-不创建也能跑（默认值开箱即用），**凭据绝不写进去**：
-
-```jsonc
-{
-  "openlist": { "op_interval_ms": 700 },          // 手动跑脚本时可临时写 base_url/username/password
-  "tmdb":     { "language": "zh-CN" },
-  "paths":    { "movies": "/115/01-电影", "tv": "/115/02-剧集", "anime": "/115/03-动画",
-                "doc": "/115/04-纪录片", "tv_rural": "/115/12-乡村剧" },
-  "naming":   { /* 模板可不写：默认值取自 core/naming_spec 事实源 */ },
-  "containers": { "fixed": ["0-待整理", "合集", "专辑"], "inbox": ["0-待整理", "待整理"] },
-  "limits":   { "max_execute_batch": 200 }
-}
-```
+`config.json`（可选，默认值开箱即用；完整示例见 `config.example.json`）：
 
 - `openlist.op_interval_ms`：**写操作最小间隔，防风控。默认 700ms，不建议调小。**
-- `naming.*_template`：命名模板，变量  
-  `{title} {original} {year} {season} {season_ep} {episode} {tech} {tmdb_id} {tmdbid_tag} {episode_title} {episode_title_seg}`；  
-  变量为空时连同相邻分隔符/括号一起省略。**不写即用冻结规范 v2.2 的默认模板。**
+- `paths.*`：库路径映射（默认 01-电影 / 02-剧集 / 03-动画 / 04-纪录片 / 12-乡村剧）
+- `naming.*_template`：命名模板，**默认值取自 `aix8pan/core/naming_spec.py` 事实源（冻结 v2.2）**；变量  
+  `{title} {original} {year} {season} {season_ep} {episode} {tech} {tmdb_id} {tmdbid_tag} {episode_title} {episode_title_seg}`，  
+  变量为空时连同相邻分隔符/括号一起省略。
+- 手动跑脚本/测试时：`export OPENLIST_URL=... OPENLIST_PASS=...` 等即可（与 MCP 注入同一套变量）。
 
 ## 目录结构
 
 ```
 aix8-pan/
-├── aix8pan/                     # Python 包（上架分发物）
-│   ├── server.py                # MCP stdio 服务（14 个工具，唯一入口）
-│   ├── config.py                # 配置加载（env > config.json > 默认）+ 路径锚定
-│   ├── core/                    # 基础能力层
-│   │   ├── naming_spec.py       # ★ 命名规范单一事实源（模板/artwork/技术标签/容器）
-│   │   ├── naming.py            # 命名引擎（模板渲染 + 空值剔除 + 标点规范化 + artwork 命名）
-│   │   ├── parser.py            # 文件名解析（标题/年份/SxxExx/规范序技术标签/TMDB ID）
-│   │   ├── openlist.py          # OpenList REST 客户端（token 自动续期 + 限速）
-│   │   └── tmdb.py              # TMDB 客户端（搜索/详情/单集/图片，带缓存与过期自清）
-│   └── pipeline/                # 整理流水线层
-│       ├── planner.py           # 规划器（只读；容器识别 + 幂等 + artwork 归一）
-│       ├── executor.py          # 执行器（限速执行 + 断点续跑）
-│       ├── scraper.py           # 刮削器（按规范命名上传海报/nfo）
-│       └── auditor.py           # ★ 库审计器（只读，输出偏差清单）
-├── scripts/                     # 本机运维脚本（不随包分发；archive/ 为已归档的一次性修复）
-│   ├── run_audit.py             # 库审计
-│   ├── scan_containers.py       # 只读扫描「合集/专辑」全部作品 → JSON
-│   ├── make_report2.py          # JSON → TMDB×115 对照表 xlsx
-│   ├── fetch_115_cids.py        # 解密本机 Chrome 的 115 登录态 → 目录 cid → 115 深链
-│   ├── fetch_tmdb_collections.py# 逐片取归属合集 + 合集成员/上映情况 + 官网链接
-│   ├── fetch_inbox.py           # 只读列「0-待整理」，供区分"没资源"与"没归位"
-│   ├── dedupe_same_name.py      # 检测 / 清理 115 上的同名重复条目
-│   ├── verify_titles.py         # 全量与 TMDB 官方标题比对
-│   ├── fix_issues.py            # 定向纠正（改名 + 补海报），无 --execute 只预览
-│   └── archive/                 # 已归档的一次性修复脚本（历史记录）
-├── data/                        # 运行时产物（gitignore）
-│   ├── plans/                   # 方案存档（执行审计轨迹）
-│   ├── cache/                   # TMDB 查询缓存（7 天过期自清）
-│   └── state/                   # 管线中间状态（扫描/字幕/合集缓存）
-├── tests/
-│   ├── check_spec.py            # ★ 规范冻结守门校验（行为契约 + 文档一致 + 配置一致）
-│   ├── test_parser_naming.py    # 44 项单元测试
-│   ├── test_server_contract.py  # MCP 契约测试（工具注册 / outputSchema / annotations / 信封 / env 契约）
-│   └── test_e2e_write.py        # 端到端（沙盒写入 + 自动清理）
-├── config.json                  # 可选本机偏好（无凭据；不创建也能跑）
-├── config.example.json          # 配置模板
-├── SPEC.md                      # ★ 统一命名规范（从存量提炼）
-└── requirements.txt
+├── config.json              # 可选本机偏好（凭据走环境变量，此文件无秘密）
+├── SPEC.md                  # ★ 统一命名规范（从存量提炼）
+├── aix8pan/
+│   ├── server.py            # MCP stdio 服务入口（14 个工具）
+│   ├── config.py            # 配置加载（env > config.json > 默认）+ 路径锚定
+│   ├── core/                # ── 基础能力层 ──
+│   │   ├── naming_spec.py   # ★ 命名规范单一事实源（模板/artwork/技术标签/容器）
+│   │   ├── naming.py        # 命名引擎（模板渲染 + 空值剔除 + 标点规范化 + artwork 命名）
+│   │   ├── parser.py        # 文件名解析（标题/年份/SxxExx/规范序技术标签/TMDB ID）
+│   │   ├── openlist.py      # OpenList REST 客户端（token 自动续期 + 限速）
+│   │   └── tmdb.py          # TMDB 客户端（搜索/详情/单集/图片，带缓存）
+│   └── pipeline/            # ── 整理流水线层 ──
+│       ├── planner.py       # 规划器（只读；容器识别 + 幂等 + artwork 归一）
+│       ├── executor.py      # 执行器（限速执行 + 断点续跑）
+│       ├── scraper.py       # 刮削器（按规范命名上传海报/nfo）
+│       └── auditor.py       # ★ 库审计器（只读，输出偏差清单）
+├── data/
+│   ├── plans/               # 方案存档（执行审计轨迹）
+│   ├── cache/               # TMDB 查询缓存（过期自动删）
+│   └── state/               # 管线中间状态
+├── scripts/                 # 运维脚本（审计/核对表/定向纠正等 16 个 + archive/ 归档）
+└── tests/
+    ├── check_spec.py          # ★ 规范冻结守门校验（行为契约 + 文档一致 + 配置一致）
+    ├── test_parser_naming.py  # 44 项单元测试
+    ├── test_server_contract.py # MCP 契约测试（工具注册 / outputSchema / annotations / 信封 / env 契约）
+    └── test_e2e_write.py      # 端到端（沙盒写入 + 自动清理）
 ```
+
 
 ## MCP 工具一览（14）
 
