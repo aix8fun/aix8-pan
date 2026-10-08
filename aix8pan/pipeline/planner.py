@@ -60,6 +60,7 @@ class Planner:
                    normalize_artwork: bool = True,
                    normalize_names: bool = True,
                    canonical_folder: bool = False,
+                   strict: bool = False,
                    title_override: str = "",
                    use_tmdb_title: bool = False) -> dict:
         """扫描 source（一个待整理目录），生成整理 Plan。
@@ -73,6 +74,9 @@ class Planner:
         canonical_folder=True 时**强制**按模板重算作品目录名（忽略「源目录名看着已合规」
         与「目标库已有同作品目录」两条复用捷径），用于把存量里明确违规的目录名一次纠正
         （多余版本修饰词 / 旧式标识 / 缺 ID 标识）。
+        strict=True 为「严格归一」模式：在 canonical_folder 之上再放弃「少改名」宽容
+        —— 作品目录强制带 {tmdbid-N}、季目录强制按模板（Season 01）、
+        已就位但命名不合规的文件（英文名/简化名）也按规范模板改名。
         use_tmdb_title=True 时标题改用 TMDB 官方标题（默认「信任存量」取目录名标题），
         用于纠正目录名标题与 TMDB 的明确偏差。
         title_override 用于 TMDB 中文库缺译名时的手工指定标题（优先级最高）。
@@ -143,6 +147,7 @@ class Planner:
                              normalize_artwork=normalize_artwork,
                              normalize_names=normalize_names,
                              canonical_folder=canonical_folder,
+                             strict=strict,
                              title_override=title_override,
                              use_tmdb_title=use_tmdb_title)
 
@@ -152,6 +157,7 @@ class Planner:
                              normalize_artwork=normalize_artwork,
                              normalize_names=normalize_names,
                              canonical_folder=canonical_folder,
+                             strict=strict,
                              title_override=title_override,
                              use_tmdb_title=use_tmdb_title)
 
@@ -214,7 +220,8 @@ class Planner:
     def _plan_group(self, plan: dict, group_dir: str, target_root: str,
                     media_type: str, entries: list[dict] | None = None,
                     normalize_artwork: bool = True, normalize_names: bool = True,
-                    canonical_folder: bool = False, title_override: str = "",
+                    canonical_folder: bool = False, strict: bool = False,
+                    title_override: str = "",
                     use_tmdb_title: bool = False):
         """处理一个作品组（group_dir 目录本身或给定的文件列表）。"""
         if entries is None:
@@ -228,7 +235,8 @@ class Planner:
             if p.is_media:
                 media.append((e, p))
             elif p.is_companion or p.ext in (".nfo", ".srt", ".ass", ".ssa", ".sub", ".idx") \
-                    or p.ext in IMAGE_EXTS:
+                    or p.ext in IMAGE_EXTS or name.lower() == "theme.mp3":
+                # theme.mp3 = Kodi/Jellyfin 标准剧集主题音乐，属伴随资产（随作品搬移）
                 companions.append((e, p))
             elif e.get("is_dir") and SEASON_DIR_RE.match(name):
                 # 下钻 Season XX 子目录（剧集存量标准结构），并记住其真实目录名
@@ -239,7 +247,8 @@ class Planner:
                     se = dict(se, _dir=sub, _dir_name=name, _season_dir_name=name)
                     if sp.is_media:
                         media.append((se, sp))
-                    elif sp.is_companion or sp.ext in (".nfo", ".srt", ".ass", ".ssa", ".sub", ".idx", ".jpg", ".png"):
+                    elif sp.is_companion or sp.ext in (".nfo", ".srt", ".ass", ".ssa", ".sub", ".idx", ".jpg", ".png") \
+                            or sn.lower() == "theme.mp3":
                         companions.append((se, sp))
                     else:
                         others.append((se, sp))
@@ -316,6 +325,10 @@ class Planner:
             title = meta["title"]
         if title_override:
             title = title_override
+        # 存量约定（tMM 形态）：非拉丁原名（国产片等）时 {original} 段回填中文标题
+        # 本身 —— 「南京照相馆 南京照相馆 (2025) […]」，与专辑/合集库存量统一
+        if not original:
+            original = title
 
         if not year:
             plan["unmatched"].append({
@@ -327,8 +340,9 @@ class Planner:
         #   a. 源目录名本身已合规 → 沿用原名，整体搬走即可
         #   b. 目标库已有同作品目录 → 复用它
         #   c. 都没有 → 按模板新建（此时才加 {tmdbid-N} 标识）
-        # canonical_folder=True 时不走 a/b，直接按模板重算（用于纠正明确违规的目录名）
-        reuse_source_name = (not canonical_folder) and bool(
+        # canonical_folder / strict=True 时不走 a/b，直接按模板重算（纠正违规目录名 /
+        # 严格归一：目录强制带 {tmdbid-N}）
+        reuse_source_name = (not canonical_folder and not strict) and bool(
             folder_parsed.title and folder_parsed.year and
             folder_parsed.title == title and folder_parsed.year == year)
         if reuse_source_name:
@@ -343,7 +357,7 @@ class Planner:
                     if canon and canon != folder_raw:
                         target_folder = canon
         else:
-            target_folder = None if canonical_folder else \
+            target_folder = None if (canonical_folder or strict) else \
                 self._find_existing_folder(target_root, title, year)
         if target_folder is None:
             v = self.naming.build_vars(title=title, year=year, tmdb_id=tmdb_id)
@@ -381,6 +395,8 @@ class Planner:
             cur_dir = e.get("_dir") or group_dir
             item = {"name": fname, "cur_dir": cur_dir, "ext": p.ext,
                     "size": e.get("size") or 0}
+            if e.get("_dir_name"):
+                item["_dir_name"] = e["_dir_name"]  # 所在季目录名（空目录清理用）
             if kind == "movie":
                 v = self.naming.build_vars(title=title, original=original, year=year,
                                            tech=p.tech, tmdb_id=tmdb_id)
@@ -393,11 +409,16 @@ class Planner:
                                            episode=p.episode, tech=p.tech,
                                            tmdb_id=tmdb_id, episode_title=ep_t)
                 new_name = self.naming.tv_file_name(v, p.ext)
-                # 季目录名：优先沿用文件当前所在的季目录名（Season 1 不改成 Season 01）
-                sdir = e.get("_season_dir_name") or self.naming.season_folder_name(season)
+                # 季目录名：优先沿用文件当前所在的季目录名（Season 1 不改成 Season 01）；
+                # strict 模式强制按模板（Season 01）
+                sdir = self.naming.season_folder_name(season) if strict else \
+                    (e.get("_season_dir_name") or self.naming.season_folder_name(season))
                 dst_dir = f"{target_path}/{sdir}"
             # 已就位且命名合规 → 不动它（幂等的关键；就位时采用宽容判定）
-            if self._same_location(cur_dir, dst_dir, group_dir, target_path) and \
+            # strict 模式不看「身份对得上」，一律按规范模板重算文件名
+            # （已是规范名时 new_name == fname，天然幂等）
+            if not strict and \
+                    self._same_location(cur_dir, dst_dir, group_dir, target_path) and \
                     self._file_acceptable(p, title, year, kind, lenient=True):
                 new_name = fname
             item.update({"new_name": new_name, "dst_dir": dst_dir, "kind": "media"})
@@ -441,6 +462,8 @@ class Planner:
             fname = e["name"]
             cur_dir = e.get("_dir") or group_dir
             item = {"name": fname, "cur_dir": cur_dir, "ext": p.ext}
+            if e.get("_dir_name"):
+                item["_dir_name"] = e["_dir_name"]  # 所在季目录名（空目录清理用）
             dst_default = self._relocate(cur_dir, group_dir, target_path)
 
             art_kind = spec.parse_artwork(fname) if p.ext in IMAGE_EXTS else ""
@@ -669,10 +692,14 @@ class Planner:
                                     "path": f"{f['dst_dir'].rstrip('/')}/{f['name']}",
                                     "new_name": f["new_name"], "status": "pending"})
 
-        # ④ 空目录清理（不清理扫描根；只清理「确有文件被搬走」且已搬空的来源目录）
+        # ④ 空目录清理（只清理「确有文件被搬走」且已搬空的来源目录）
+        #   扫描根一般不清（防误删）；但整组搬迁（target_path 变了）时，
+        #   根目录剩下的只是空壳，连根带搬空的季子目录一起清（内层先清）。
         for g in plan["groups"]:
             src_dir = g["source_dir"].rstrip("/")
-            if src_dir == plan["source"].rstrip("/"):
+            is_scan_root = src_dir == plan["source"].rstrip("/")
+            relocated = (g.get("target_path") or "").rstrip("/") != src_dir
+            if is_scan_root and (not relocated or g.get("others")):
                 continue
             if not any(f.get("op") == "move" for f in g["files"]):
                 continue  # 没有文件离开该目录 → 不做任何清理
@@ -682,6 +709,11 @@ class Planner:
             except Exception:
                 continue  # 目录已不存在 → 无需清理
             if others and planned and others.issubset(planned):
+                # 先清搬空的季子目录（executor 只删「验证为空」的目录，安全）
+                for sub in sorted({f.get("_dir_name") for f in g["files"]
+                                   if f.get("op") == "move" and f.get("_dir_name")}):
+                    actions.append({"action": "cleanup_empty_dir", "parent": src_dir,
+                                    "name": sub, "status": "pending"})
                 parent = src_dir.rsplit("/", 1)[0]
                 actions.append({"action": "cleanup_empty_dir", "parent": parent,
                                 "name": src_dir.rsplit("/", 1)[1], "status": "pending"})

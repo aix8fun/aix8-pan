@@ -199,16 +199,19 @@ def tmdb_detail(tmdb_id: str, media_type: str) -> Result:
                          "drain_inbox=true（默认）时把收件箱 0-待整理 里的作品一并搬走；"
                          "normalize_names=true（默认）时纠正明确违规的存量名"
                          "（旧式 {tmdb-N} 标识 → {tmdbid-N}；文件名里的 ID 与方括号标签）。"
+                         "strict=true 为严格归一：目录强制带 {tmdbid-N}、季目录强制 Season 01、"
+                         "已就位的英文名/简化名文件也按规范模板改名（放弃「少改名」宽容）。"
                          "返回方案摘要与 plan_id。",
              annotations=A_PLAN)
 def build_plan(source: str, target_root: str = "", media_type: str = "auto",
                include_containers: bool = False, drain_inbox: bool = True,
-               normalize_names: bool = True) -> Result:
+               normalize_names: bool = True, strict: bool = False) -> Result:
     try:
         plan = planner.build_plan(source, target_root or None, media_type,
                                   include_containers=include_containers,
                                   drain_inbox=drain_inbox,
-                                  normalize_names=normalize_names)
+                                  normalize_names=normalize_names,
+                                  strict=strict)
         planner.save_plan(plan)
         s = plan["summary"]
         lines = [f"Plan {plan['plan_id']}（已保存，未执行 —— 需要你确认后才会动网盘）",

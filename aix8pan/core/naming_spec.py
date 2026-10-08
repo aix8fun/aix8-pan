@@ -29,6 +29,8 @@ v2.1 → v2.2（2026-10-08，用户拍板）：
 ────────────────────────────────────────────────────────────
 电影作品目录 : 大黄蜂 (2018) {tmdbid-424783}
 电影主文件   : 大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos].iso
+             : 南京照相馆 南京照相馆 (2025) [2160p DV DTS].mkv   ← 非拉丁原名时
+               {original} 段回填中文标题本身（tMM 存量约定，国产片形态）
 电影海报     : 大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos]-poster.jpg   ← 前缀式
 电影 logo    : 大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos]-clearlogo.png
 电影 nfo     : 大黄蜂 Bumblebee (2018) [2160p TrueHD Atmos].nfo          ← 与主文件同名

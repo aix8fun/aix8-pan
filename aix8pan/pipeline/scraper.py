@@ -25,6 +25,7 @@
 from __future__ import annotations
 
 import html
+import re
 
 from ..core import naming_spec as spec
 from ..config import load_config
@@ -38,6 +39,10 @@ _LEGACY_MOVIE_ART = {
     "logo.png": "clearlogo", "clearlogo.png": "clearlogo",
 }
 _LEGACY_MOVIE_NFO = {"movie.nfo"}
+
+# Season 目录名（Season 01 / S1 / 第1季 …）→ 季号
+_SEASON_DIR_RE = re.compile(
+    r"^(?:Season|S)\s*0*(\d{1,2})$|^第\s*0*(\d{1,2})\s*季$", re.IGNORECASE)
 
 
 class Scraper:
@@ -74,7 +79,7 @@ class Scraper:
         kind = self._detect_kind(work_dir, entries, media_type)
         if not tmdb_id:
             folder = work_dir.rstrip("/").split("/")[-1]
-            from .parser import parse_media_name
+            from ..core.parser import parse_media_name
             p = parse_media_name(folder, is_dir=True)
             title, year = p.title, p.year
             if not title:
@@ -126,9 +131,16 @@ class Scraper:
             force_now=force_nfo)
 
         # 剧集：季海报（放剧集根目录，seasonNN-poster.jpg）
+        # 只刮**本地实际存在**的季 —— TMDB 可能把续作并成同剧的 S2
+        # （如 步步惊心 S2 实为《步步惊情》），本地没有的季不上海报。
+        # 本地一季都识别不到时（目录还没整理）回落为全量，保持旧行为。
         if kind == "tv":
+            local_seasons = self._local_seasons(entries)
             for s in meta.get("seasons") or []:
                 if not s.get("poster_path"):
+                    continue
+                if local_seasons and s["season"] not in local_seasons:
+                    skipped.append(f"{spec.season_poster_name(s['season'])} (本地无此季)")
                     continue
                 sname = spec.season_poster_name(s["season"])
                 try:
@@ -170,6 +182,27 @@ class Scraper:
     # ---------- 内部 ----------
 
     @staticmethod
+    def _local_seasons(entries: list[dict]) -> set[int]:
+        """本地实际存在的季号：Season 目录名 + 散落剧集文件的 SxxExx 令牌。
+
+        list_all 只列单层，季目录内的集文件不可见，因此主要靠目录名识别；
+        集文件直接散放在作品根目录（未整理）时由 SxxExx 令牌兜底。
+        """
+        from ..core.parser import parse_media_name
+        seasons: set[int] = set()
+        for e in entries:
+            n = (e.get("name") or "").strip()
+            if e.get("is_dir"):
+                m = _SEASON_DIR_RE.match(n)
+                if m:
+                    seasons.add(int(m.group(1) or m.group(2)))
+            else:
+                p = parse_media_name(n)
+                if p.season is not None:
+                    seasons.add(p.season)
+        return seasons
+
+    @staticmethod
     def _main_media_stem(entries: list[dict]) -> str:
         """作品内主文件前缀 —— 作为电影 artwork/nfo 前缀。
 
@@ -178,7 +211,7 @@ class Scraper:
         **多版本共存**（1080p + 2160p）→ 取体积最大版本（不合并成公共前缀，
         否则会造出一个不存在版本的前缀名）。
         """
-        from .parser import parse_media_name
+        from ..core.parser import parse_media_name
         stems = []
         biggest, biggest_size = "", -1
         for e in entries:
@@ -208,7 +241,7 @@ class Scraper:
                 return "tv"
             if n in ("tvshow.nfo",):
                 return "tv"
-        from .parser import parse_media_name
+        from ..core.parser import parse_media_name
         for e in entries:
             if e.get("is_dir"):
                 continue
