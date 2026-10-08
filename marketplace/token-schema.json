@@ -3,7 +3,7 @@
   "title_en": "AIX8-Pan Configuration",
   "description": "连接你自己的 OpenList 与 TMDB。凭证仅存储在本机 ~/.workbuddy 目录下，不经过任何云端。",
   "description_en": "Connect your own OpenList and TMDB. Credentials are stored locally only.",
-  "docUrl": "https://github.com/aix8fun/aix8-pan#部署引导",
+  "docUrl": "https://github.com/aix8fun/aix8-pan#部署引导新用户三步走",
   "docLabel": "如何部署 OpenList 并挂载 115 网盘？",
   "fields": [
     {

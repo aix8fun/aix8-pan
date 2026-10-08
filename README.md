@@ -174,7 +174,7 @@ docker run -d --name openlist -p 5244:5244 \
 
 ```bash
 # 克隆工程并安装依赖（Python ≥ 3.11）
-git clone <本仓库地址> ~/tools/aix8-pan
+git clone https://github.com/aix8fun/aix8-pan.git ~/tools/aix8-pan
 cd ~/tools/aix8-pan
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```

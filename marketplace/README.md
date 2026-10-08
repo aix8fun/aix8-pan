@@ -33,7 +33,7 @@ marketplace/
 - [x] 真实仓库地址：github.com/aix8fun/aix8-pan（token-schema docUrl 指向 README 部署引导）
 - [x] 分发行 SKILL.md：`skills/aix8-pan/SKILL.md`（无本机绝对路径；命名规范以 naming_spec 工具为唯一标准）
 - [x] 图标：云 + 播放键 App 风格（marketplace 尺寸 64px 下清晰可辨）
-- [ ] 推送 tag `v1.0.0` 到仓库（mcp.json 引用了它）
+- [x] 推送 tag `v1.0.0` 到仓库（mcp.json 引用了它，已验证 ls-remote 可见）
 - [ ] 按官方「提交前检查」自查后，将本目录打包提交 WorkBuddy 团队审核
       （开放平台：open.workbuddy.cn，审核通过后通常 10–15 分钟内同步市场）
 
