@@ -116,7 +116,7 @@ def scan_work(a: Auditor, eng: NamingEngine, w: str, root: str, cat: str) -> dic
 
     img_names = [e.get("name") or "" for e, _q in companions
                  if (e.get("name") or "").rsplit(".", 1)[-1].lower() in
-                 {x.lstrip(".") for x in __import__("panbutler.parser", fromlist=["IMAGE_EXTS"]).IMAGE_EXTS}]
+                 {x.lstrip(".") for x in __import__("aix8pan.parser", fromlist=["IMAGE_EXTS"]).IMAGE_EXTS}]
     nfo_names = [e.get("name") or "" for e, _q in companions
                  if (e.get("name") or "").lower().endswith(".nfo")]
     sub_names = [e.get("name") or "" for e, _q in companions

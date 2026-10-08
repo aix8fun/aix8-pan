@@ -48,7 +48,7 @@ executor = Executor(_cfg, client)
 scraper = Scraper(_cfg, client, tmdb)
 auditor = Auditor(_cfg, client)
 
-server = MCPServer(name="panbutler",
+server = MCPServer(name="aix8-pan",
                    title="AIX8-Pan 115 网盘整理",
                    instructions="115 网盘媒体整理助手：浏览/识别/规划/审计/刮削。整理走 Plan→确认→Execute 流程，绝不直接改文件。"
                                "命名规范以 naming_spec 为唯一标准；其中**电影规则已于 v2.0 冻结**"

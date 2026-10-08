@@ -23,7 +23,7 @@ from openpyxl.utils import get_column_letter
 SRC = state_path("container_scan.json")
 TVF = state_path("title_verify.json")
 LKF = state_path("115_cids.json")          # tests/fetch_115_cids.py 产出
-OUT = Path.home() / "WorkBuddy/panbutler/合集_专辑_作品规范核对表.xlsx"
+OUT = Path.home() / "WorkBuddy/aix8-pan/合集_专辑_作品规范核对表.xlsx"
 
 # ── 样式 ────────────────────────────────────────────────────
 C_HEAD = "1F3864"        # 表头深蓝

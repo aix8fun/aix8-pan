@@ -1,6 +1,6 @@
 """刮削器：下载 TMDB 图片 + 生成 NFO 上传到作品目录
 
-产物命名**严格**遵循 panbutler.naming_spec（见 SPEC.md）：
+产物命名**严格**遵循 aix8pan.naming_spec（见 SPEC.md）：
 
 - 电影（前缀式 / Plex-Kodi local artwork）：
     大黄蜂 Bumblebee (2018) 2160p TrueHD Atmos-poster.jpg

@@ -13,7 +13,7 @@
   {episode_title} 单集标题
   {episode_title_seg}  「 - 单集标题」（无则为空）
 
-模板默认值全部取自 panbutler.naming_spec（单一事实源），本模块不再硬编码形态。
+模板默认值全部取自 aix8pan.naming_spec（单一事实源），本模块不再硬编码形态。
 空值剔除：变量为空时连同相邻空白与包裹括号一起省略。
 """
 from __future__ import annotations

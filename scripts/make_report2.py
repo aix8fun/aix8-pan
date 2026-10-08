@@ -43,7 +43,7 @@ TVF = state_path("title_verify.json")
 LKF = state_path("115_cids.json")
 TCF = state_path("tmdb_collections.json")
 IBF = state_path("inbox.json")
-OUT = Path.home() / "WorkBuddy/panbutler/合集_专辑_TMDB核对表.xlsx"
+OUT = Path.home() / "WorkBuddy/aix8-pan/合集_专辑_TMDB核对表.xlsx"
 
 C_HEAD = "1F3864"
 C_HEAD_TXT = "FFFFFF"
