@@ -27,7 +27,7 @@ from ..core import naming_spec as spec
 from ..core.naming import NamingEngine, latin_title
 from ..core.openlist import OpenListClient
 from ..core.parser import (
-    IMAGE_EXTS, ParsedName, looks_organized_folder, parse_media_name, season_folder_name,
+    IMAGE_EXTS, ParsedName, looks_organized_folder, parse_media_name,
     violates_filename_spec,
 )
 

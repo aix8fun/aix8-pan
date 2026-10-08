@@ -35,7 +35,6 @@ from mcp.types import ToolAnnotations
 from aix8pan import __version__
 from aix8pan.config import load_config, ensure_dirs
 from aix8pan.core import naming_spec
-from aix8pan.core.naming import NamingEngine
 from aix8pan.core.openlist import OpenListClient
 from aix8pan.core.parser import parse_media_name
 from aix8pan.core.tmdb import TMDBClient

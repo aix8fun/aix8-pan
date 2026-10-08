@@ -402,8 +402,6 @@ def test_unprefixed_artwork_and_nfo_owner():
 
 def test_multi_version_artwork_roundtrip():
     """多版本目录重命名时，每个版本的 artwork 各自跟随，不得并成一个前缀。"""
-    eng = NamingEngine({"movie_folder_template": "{title} ({year}) {tmdbid_tag}",
-                        "movie_file_template": "{title} {original} ({year}) [{tech}]"})
     stems = [_STEM_1080, _STEM_2160]
     for st in stems:
         owner = spec.artwork_owner(f"{st}-poster.jpg", stems)
