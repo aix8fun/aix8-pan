@@ -170,20 +170,34 @@ docker run -d --name openlist -p 5244:5244 \
 到 [themoviedb.org](https://www.themoviedb.org/settings/api) 申请（32 位）。
 国内直连不稳定时，可自建代理（参考 [tmdb-proxy](https://github.com/aix8fun/tmdb-proxy)）。
 
-**第 3 步 · 在 MCP 配置里填 5 个环境变量**
+**第 3 步 · 部署本工具并配置 MCP**
 
-在 `~/.workbuddy/mcp.json` 的 `aix8-pan` 条目 `env` 中配置：
+```bash
+# 克隆工程并安装依赖（Python ≥ 3.11）
+git clone <本仓库地址> ~/tools/aix8-pan
+cd ~/tools/aix8-pan
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+```
+
+在 `~/.workbuddy/mcp.json` 的 `mcpServers` 中添加完整条目（路径换成自己机器上的实际位置）：
 
 ```json
-"env": {
-  "OPENLIST_URL":   "https://pan.example.com",
-  "OPENLIST_USER":  "admin",
-  "OPENLIST_PASS":  "你的OpenList密码",
-  "TMDB_HOST":      "https://api.themoviedb.org",
-  "TMDB_API_KEY":   "你的32位TMDB Key"
+"aix8-pan": {
+  "command": "/Users/你的用户名/tools/aix8-pan/.venv/bin/python3",
+  "args": ["/Users/你的用户名/tools/aix8-pan/aix8pan/server.py"],
+  "cwd": "/Users/你的用户名/tools/aix8-pan",
+  "env": {
+    "OPENLIST_URL":   "https://pan.example.com",
+    "OPENLIST_USER":  "admin",
+    "OPENLIST_PASS":  "你的OpenList密码",
+    "TMDB_HOST":      "https://api.themoviedb.org",
+    "TMDB_API_KEY":   "你的32位TMDB Key"
+  }
 }
 ```
 
+- `command` 用 venv 里的 python（保证 mcp/requests 已装）；也可用 `uv`：`uv run --with mcp,requests python aix8pan/server.py`
+- 不创建 `config.json` 也能跑：命名模板等默认值开箱即用（取自事实源 v2.2）；库路径等本机偏好想改再建
 - `TMDB_HOST` 同时供 API 与图片地址（默认官方；用代理则填代理地址）
 - 优先级：**环境变量 > config.json > 内置默认**
 - 配好后新开会话，说「健康检查」即可用 `health_check` 验证连通性——未配齐时它会分阶段指引缺什么、去哪配
