@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "aix8-pan": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["aix8-pan"],
+      "env": {
+        "OPENLIST_URL": "${OPENLIST_URL}",
+        "OPENLIST_USER": "${OPENLIST_USER}",
+        "OPENLIST_PASS": "${OPENLIST_PASS}",
+        "TMDB_HOST": "${TMDB_HOST}",
+        "TMDB_API_KEY": "${TMDB_API_KEY}"
+      },
+      "timeout": 30000
+    }
+  }
+}

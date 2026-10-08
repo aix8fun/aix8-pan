@@ -1,0 +1,55 @@
+{
+  "title": "AIX8-Pan 连接配置",
+  "title_en": "AIX8-Pan Configuration",
+  "description": "连接你自己的 OpenList 与 TMDB。凭证仅存储在本机 ~/.workbuddy 目录下，不经过任何云端。",
+  "description_en": "Connect your own OpenList and TMDB. Credentials are stored locally only.",
+  "docUrl": "https://github.com/你的用户名/aix8-pan#部署引导",
+  "docLabel": "如何部署 OpenList 并挂载 115 网盘？",
+  "fields": [
+    {
+      "key": "OPENLIST_URL",
+      "label": "OpenList 服务地址",
+      "label_en": "OpenList URL",
+      "type": "text",
+      "required": true,
+      "placeholder": "https://pan.example.com",
+      "description": "你部署的 OpenList 地址。需先部署 OpenList 并挂载 115 网盘（见上方链接的三步引导）。"
+    },
+    {
+      "key": "OPENLIST_USER",
+      "label": "OpenList 用户名",
+      "label_en": "OpenList Username",
+      "type": "text",
+      "required": true,
+      "defaultValue": "admin",
+      "description": "OpenList 管理后台的用户名，默认 admin。"
+    },
+    {
+      "key": "OPENLIST_PASS",
+      "label": "OpenList 密码",
+      "label_en": "OpenList Password",
+      "type": "password",
+      "required": true,
+      "placeholder": "OpenList 管理后台的密码",
+      "description": "仅存本机，用于登录 OpenList 换取访问令牌。"
+    },
+    {
+      "key": "TMDB_HOST",
+      "label": "TMDB API 地址",
+      "label_en": "TMDB API Host",
+      "type": "text",
+      "required": false,
+      "defaultValue": "https://api.themoviedb.org",
+      "description": "默认官方地址；国内直连不稳定可改为自建代理地址。"
+    },
+    {
+      "key": "TMDB_API_KEY",
+      "label": "TMDB API Key",
+      "label_en": "TMDB API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "32 位 API Key",
+      "description": "在 themoviedb.org → 设置 → API 中申请，用于元数据与海报。"
+    }
+  ]
+}

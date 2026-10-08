@@ -1,0 +1,25 @@
+{
+  "name": "AIX8-Pan 个人网盘助手",
+  "name_zh": "AIX8-Pan 个人网盘助手",
+  "name_en": "AIX8-Pan Cloud Drive Assistant",
+  "description": "115 个人网盘 AI 助手 + 影视资源整理刮削工具：自然语言列目录、搜文件、取下载直链，以及电影/剧集的识别、整理、改名、刮削海报与审计。",
+  "description_zh": "115 个人网盘 AI 助手 + 影视资源整理刮削工具：自然语言列目录、搜文件、取下载直链，以及电影/剧集的识别、整理、改名、刮削海报与审计。",
+  "description_en": "115 cloud drive AI assistant and media library organizer: list, search, download links, plus movie/TV renaming, scraping and auditing.",
+  "source": "aix8-pan",
+  "type": "mcp",
+  "version": "1.0.0",
+  "auth_mode": "token",
+  "minWorkbuddyVersion": "4.23.0",
+  "examples_zh": [
+    "看看我 115 网盘根目录有什么",
+    "帮我在网盘里搜一下沙丘相关的文件",
+    "把云下载里刚下完的片子整理进电影库，先给我看方案",
+    "审计一下电影库，哪些不符合命名规范",
+    "给这部片子刮一下海报"
+  ],
+  "examples_en": [
+    "List the root of my 115 cloud drive",
+    "Search my drive for files about Dune",
+    "Organize new downloads into my movie library, show me the plan first"
+  ]
+}

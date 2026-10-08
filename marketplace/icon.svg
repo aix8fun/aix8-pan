@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- 云盘 -->
+  <path d="M18 40h28a9 9 0 0 0 1.7-17.85A13 13 0 0 0 22.6 19.3A10.5 10.5 0 0 0 18 40Z"
+        fill="#4A90D9"/>
+  <!-- 胶片条（影视整理） -->
+  <g fill="#FFFFFF">
+    <rect x="14" y="38" width="36" height="14" rx="2"/>
+  </g>
+  <g fill="#4A90D9">
+    <rect x="17" y="41" width="4" height="3"/><rect x="24" y="41" width="4" height="3"/>
+    <rect x="31" y="41" width="4" height="3"/><rect x="38" y="41" width="4" height="3"/>
+    <rect x="45" y="41" width="2" height="3"/>
+    <rect x="17" y="46" width="4" height="3"/><rect x="24" y="46" width="4" height="3"/>
+    <rect x="31" y="46" width="4" height="3"/><rect x="38" y="46" width="4" height="3"/>
+    <rect x="45" y="46" width="2" height="3"/>
+  </g>
+</svg>
