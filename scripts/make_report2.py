@@ -33,10 +33,10 @@ from openpyxl.utils import get_column_letter
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
-from aix8pan.naming_spec import TECH_ORDER, parse_artwork
-from aix8pan.parser import extract_tech_fields
+from aix8pan.core.naming_spec import TECH_ORDER, parse_artwork
+from aix8pan.core.parser import extract_tech_fields
 
 SCAN = state_path("container_scan.json")
 TVF = state_path("title_verify.json")

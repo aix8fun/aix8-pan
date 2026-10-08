@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from aix8pan.openlist import OpenListClient  # noqa: E402
+from aix8pan.core.openlist import OpenListClient  # noqa: E402
 
 cfg = json.loads((Path(__file__).resolve().parent.parent / "config.json")
                  .read_text(encoding="utf-8"))["openlist"]

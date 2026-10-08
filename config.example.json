@@ -1,13 +1,9 @@
 {
-  "_credentials": "凭据不写在本文件：AIX8PAN_OPENLIST_PASSWORD / AIX8PAN_TMDB_API_KEY 两个环境变量注入（WorkBuddy 用户配置于 ~/.workbuddy/mcp.json 的 aix8-pan.env；手动跑脚本可临时 export 或写回本文件对应字段）",
+  "_readme": "可选的本机偏好文件（不创建也能跑：默认值开箱即用）。连接信息全部走环境变量：OPENLIST_URL / OPENLIST_USER / OPENLIST_PASS / TMDB_HOST / TMDB_API_KEY，配置于 WorkBuddy 的 ~/.workbuddy/mcp.json → aix8-pan → env。凭据绝不写进本文件。手动跑脚本时可在 openlist/tmdb 段临时写 base_url/username/password/api_key（优先级低于环境变量）。",
   "openlist": {
-    "base_url": "https://your-openlist.example.com",
-    "username": "admin",
     "op_interval_ms": 700
   },
   "tmdb": {
-    "api_host": "https://tmdb.aws360.cn",
-    "image_host": "https://tmdb.aws360.cn",
     "language": "zh-CN",
     "request_interval_ms": 250
   },
@@ -19,6 +15,7 @@
     "tv_rural": "/115/12-乡村剧"
   },
   "naming": {
+    "_hint": "全部模板可不写：默认值取自 aix8pan/core/naming_spec.py 事实源（冻结 v2.2）",
     "movie_folder_template": "{title} ({year}) {tmdbid_tag}",
     "tv_folder_template": "{title} ({year}) {tmdbid_tag}",
     "season_folder_template": "Season {season:02d}",

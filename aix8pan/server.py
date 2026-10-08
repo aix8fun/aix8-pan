@@ -32,16 +32,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
-from aix8pan import naming_spec
-from aix8pan.auditor import Auditor
 from aix8pan.config import load_config, ensure_dirs
-from aix8pan.executor import Executor
-from aix8pan.naming import NamingEngine
-from aix8pan.openlist import OpenListClient
-from aix8pan.parser import parse_media_name
-from aix8pan.planner import Planner
-from aix8pan.scraper import Scraper
-from aix8pan.tmdb import TMDBClient
+from aix8pan.core import naming_spec
+from aix8pan.core.naming import NamingEngine
+from aix8pan.core.openlist import OpenListClient
+from aix8pan.core.parser import parse_media_name
+from aix8pan.core.tmdb import TMDBClient
+from aix8pan.pipeline.auditor import Auditor
+from aix8pan.pipeline.executor import Executor
+from aix8pan.pipeline.planner import Planner
+from aix8pan.pipeline.scraper import Scraper
 
 ensure_dirs()
 
@@ -316,27 +316,42 @@ def audit_library(root: str, media_type: str = "auto",
 
 # ---------------- 运维 ----------------
 
-@server.tool(description="健康检查：OpenList 连通性 + TMDB 可用性 + 挂载根目录。",
+@server.tool(description="健康检查：配置完整性 + OpenList 连通性 + TMDB 可用性 + 挂载根目录。"
+                         "首次使用先跑这个：issues 会给出逐项配置指引。",
              annotations=A_READONLY)
 def health_check() -> Result:
     issues = []
-    hint = "（凭据走环境变量，配置于 ~/.workbuddy/mcp.json 的 aix8-pan.env）"
+    hint_env = "在 MCP 配置（如 ~/.workbuddy/mcp.json → aix8-pan → env）填写："
     top: list = []
-    if _cfg["openlist"].get("password"):
+    ol, tm = _cfg["openlist"], _cfg["tmdb"]
+
+    # 分阶段引导：地址 → 账号密码 → 连通性
+    if not ol.get("base_url"):
+        issues.append("OpenList: 未配置服务地址（OPENLIST_URL）。"
+                      "需先部署 OpenList 并挂载 115 网盘（参考 github.com/OpenListTeam/OpenList），"
+                      "再回来配置地址")
+    elif not ol.get("username") or not ol.get("password"):
+        missing = "、".join(n for n, v in (("OPENLIST_USER", ol.get("username")),
+                                           ("OPENLIST_PASS", ol.get("password"))) if not v)
+        issues.append(f"OpenList: 未配置账号凭据（{missing}）。{hint_env} {missing}")
+    else:
         try:
             items = client.list_dir("/115", refresh=False)
             top = [i["name"] for i in items if i.get("is_dir")][:10]
         except Exception as e:
-            issues.append(f"OpenList: {e}")
+            issues.append(f"OpenList: {e}（若为登录失败请核对 OPENLIST_USER/OPENLIST_PASS；"
+                          f"若连不上请检查 OPENLIST_URL 服务是否在线）")
+
+    if not tm.get("api_key"):
+        issues.append(f"TMDB: 未配置 API Key（TMDB_API_KEY）。{hint_env} TMDB_API_KEY")
+    elif not tm.get("api_host"):
+        issues.append(f"TMDB: 未配置 API 地址（TMDB_HOST）。{hint_env} TMDB_HOST")
     else:
-        issues.append(f"OpenList: 未配置密码 {hint}")
-    if _cfg["tmdb"].get("api_key"):
         try:
             tmdb.search("test", "", "movie")
         except Exception as e:
-            issues.append(f"TMDB: {e}")
-    else:
-        issues.append(f"TMDB: 未配置 api_key {hint}")
+            issues.append(f"TMDB: {e}（key 失效请更换 TMDB_API_KEY；"
+                          f"连不上请检查 TMDB_HOST，可用官方 api.themoviedb.org 或自建代理）")
     return _ok({"ok": len(issues) == 0, "issues": issues, "root_dirs": top})
 
 

@@ -22,11 +22,11 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from .config import PLANS_DIR, load_config
-from . import naming_spec as spec
-from .naming import NamingEngine, latin_title
-from .openlist import OpenListClient
-from .parser import (
+from ..config import PLANS_DIR, load_config
+from ..core import naming_spec as spec
+from ..core.naming import NamingEngine, latin_title
+from ..core.openlist import OpenListClient
+from ..core.parser import (
     IMAGE_EXTS, ParsedName, looks_organized_folder, parse_media_name, season_folder_name,
     violates_filename_spec,
 )
@@ -34,7 +34,7 @@ from .parser import (
 SEASON_DIR_RE = re.compile(r"^(?:Season|S)\s*\d{1,2}$|^第\s*\d{1,2}\s*季$", re.IGNORECASE)
 # 旧式 TMDB 标识写法（{tmdb-N}），规范应为 {tmdbid-N}
 LEGACY_TMDB_TAG_RE = re.compile(r"\{\s*tmdb\s*-\s*(\d+)\s*\}", re.IGNORECASE)
-from .tmdb import TMDBClient, norm_meta
+from ..core.tmdb import TMDBClient, norm_meta
 
 
 class Planner:
@@ -488,7 +488,7 @@ class Planner:
         剧集：只归一剧集根目录的「无前缀固定名」（poster / fanart / logo / backdrop）
         电影：只归一不含季集号的文件
         """
-        from .parser import SEASON_EP_RE
+        from ..core.parser import SEASON_EP_RE
         if SEASON_EP_RE.search(fname):
             return False
         if kind == "tv":

@@ -11,9 +11,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
-from aix8pan.auditor import title_segment_issues
+from aix8pan.pipeline.auditor import title_segment_issues
 
 SRC = state_path("container_scan.json")
 CODES = {"FOLDER_EXTRA_SEG", "FOLDER_NO_CJK"}

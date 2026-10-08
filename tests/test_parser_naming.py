@@ -19,12 +19,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from aix8pan import naming_spec as spec
-from aix8pan.parser import (
+from aix8pan.core import naming_spec as spec
+from aix8pan.core.parser import (
     extract_tech, extract_tech_fields, find_tmdb_id, looks_organized_folder,
     parse_media_name, render_tech, season_folder_name, violates_filename_spec,
 )
-from aix8pan.naming import NamingEngine, latin_title, sanitize
+from aix8pan.core.naming import NamingEngine, latin_title, sanitize
 
 # 与 naming_spec v2.2 事实源一致的模板（不要写旧形态，否则测试会与冻结规范漂移）
 NAMING_CFG = {
@@ -433,7 +433,7 @@ def test_finalize_whole_dir_move_with_rename():
 
     回归 bug：旧实现先 mkdir(目标同名目录) 再 move_dir + rename → 两者撞名。
     """
-    from aix8pan.planner import Planner
+    from aix8pan.pipeline.planner import Planner
     plan = {
         "source": "/lib/inbox",
         "groups": [{
@@ -459,7 +459,7 @@ def test_finalize_whole_dir_move_with_rename():
 
 def test_finalize_keeps_mkdir_for_non_relocatable():
     """文件要被搬进**新建的子目录**（如剧集 Season 01）时，必须 mkdir + 逐文件移动。"""
-    from aix8pan.planner import Planner
+    from aix8pan.pipeline.planner import Planner
     plan = {
         "source": "/lib/inbox",
         "groups": [{
@@ -481,7 +481,7 @@ def test_finalize_keeps_mkdir_for_non_relocatable():
 
 def test_finalize_others_block_whole_dir_move():
     """组内有未归类文件（readme/压缩包）时不得整目录搬移 —— 否则会把它们一起带走。"""
-    from aix8pan.planner import Planner
+    from aix8pan.pipeline.planner import Planner
     plan = {
         "source": "/lib/inbox",
         "groups": [{

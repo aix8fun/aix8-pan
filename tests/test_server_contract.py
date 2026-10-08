@@ -93,8 +93,12 @@ def test_jsonable_fallback():
     assert data["ok"] == 1
 
 
+ENV_KEYS = ("OPENLIST_URL", "OPENLIST_USER", "OPENLIST_PASS", "TMDB_HOST", "TMDB_API_KEY")
+
+
 def test_credential_env_override():
-    """凭据优先级：环境变量 > config.json；config.json 本体不得存明文凭据。"""
+    """分发型配置契约：OPENLIST_*/TMDB_* 环境变量 > config.json > 默认值；
+    config.json 本体不得存明文凭据；默认命名模板必须来自事实源。"""
     import json
     import os
     import tempfile
@@ -104,22 +108,37 @@ def test_credential_env_override():
     assert "password" not in raw.get("openlist", {}), "config.json 不得存放 openlist.password"
     assert "api_key" not in raw.get("tmdb", {}), "config.json 不得存放 tmdb.api_key"
 
-    # ② env 覆盖：写在临时 config 里应被 env 覆盖；env 为空则回落文件值
+    # ② 全新用户（空 config + 无 env）：凭据空但不崩溃，命名模板来自事实源
     from aix8pan.config import load_config
-    env_pwd, env_key = os.environ.get("AIX8PAN_OPENLIST_PASSWORD", ""), os.environ.get("AIX8PAN_TMDB_API_KEY", "")
+    saved = {k: os.environ.get(k, "") for k in ENV_KEYS}
+    for k in ENV_KEYS:
+        os.environ.pop(k, None)
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-        json.dump({"openlist": {"password": "from-file-pwd"},
-                   "tmdb": {"api_key": "from-file-key"}}, f)
+        f.write("{}")
         tmp = f.name
     try:
-        os.environ["AIX8PAN_OPENLIST_PASSWORD"] = "from-env-pwd"
-        os.environ["AIX8PAN_TMDB_API_KEY"] = ""
+        fresh = load_config(tmp)
+        assert fresh["openlist"]["base_url"] == "" and fresh["tmdb"]["api_key"] == ""
+        assert fresh["naming"]["movie_file_template"] == "{title} {original} ({year}) [{tech}]"
+
+        # ③ env 覆盖文件值；env 为空回落文件值；TMDB_HOST 双供 api/image host
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"openlist": {"base_url": "from-file-url", "password": "from-file-pwd"},
+                       "tmdb": {"api_key": "from-file-key"}}, f)
+        os.environ.update({"OPENLIST_URL": "from-env-url", "OPENLIST_PASS": "from-env-pwd",
+                           "TMDB_HOST": "from-env-host"})
         cfg = load_config(tmp)
+        assert cfg["openlist"]["base_url"] == "from-env-url", "env 应覆盖文件"
         assert cfg["openlist"]["password"] == "from-env-pwd", "env 应覆盖文件"
         assert cfg["tmdb"]["api_key"] == "from-file-key", "env 为空应回落文件"
+        assert cfg["tmdb"]["api_host"] == "from-env-host" and cfg["tmdb"]["image_host"] == "from-env-host", \
+            "TMDB_HOST 应同时供给 api_host 与 image_host"
     finally:
-        os.environ["AIX8PAN_OPENLIST_PASSWORD"] = env_pwd
-        os.environ["AIX8PAN_TMDB_API_KEY"] = env_key
+        for k, v in saved.items():
+            if v:
+                os.environ[k] = v
+            else:
+                os.environ.pop(k, None)
         Path(tmp).unlink(missing_ok=True)
 
 

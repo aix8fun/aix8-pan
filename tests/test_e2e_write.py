@@ -9,10 +9,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from aix8pan.config import load_config
-from aix8pan.executor import Executor
-from aix8pan.openlist import OpenListClient
-from aix8pan.planner import Planner
-from aix8pan.scraper import Scraper
+from aix8pan.pipeline.executor import Executor
+from aix8pan.core.openlist import OpenListClient
+from aix8pan.pipeline.planner import Planner
+from aix8pan.pipeline.scraper import Scraper
 
 SANDBOX = "/115/.aix8pan-e2e"
 INBOX = f"{SANDBOX}/inbox"
@@ -166,7 +166,7 @@ def main():
 
         # 8. 审计器（只读，应报告 0 偏差）
         print("[8] 审计（只读）")
-        from aix8pan.auditor import Auditor
+        from aix8pan.pipeline.auditor import Auditor
         au = Auditor(cfg, c).audit(LIB, media_type="auto")
         print("   ", json.dumps(au["summary"], ensure_ascii=False))
         print("    问题分布:", au["by_code"])

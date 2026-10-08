@@ -14,9 +14,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from aix8pan.executor import Executor
-from aix8pan.planner import Planner
-from aix8pan.scraper import Scraper
+from aix8pan.pipeline.executor import Executor
+from aix8pan.pipeline.planner import Planner
+from aix8pan.pipeline.scraper import Scraper
 
 MOV = "/115/01-电影"
 SPIDEY_ROOT = f"{MOV}/合集/漫威宇宙（主线）/蜘蛛侠（复仇者联盟）（系列）"
@@ -152,7 +152,7 @@ def scrape_all() -> None:
 
 def verify(built: list[dict]) -> None:
     from aix8pan.config import load_config
-    from aix8pan.openlist import OpenListClient
+    from aix8pan.core.openlist import OpenListClient
     cfg = load_config()
     ol = cfg["openlist"]
     c = OpenListClient(ol["base_url"], ol["username"], ol["password"], ol["op_interval_ms"])

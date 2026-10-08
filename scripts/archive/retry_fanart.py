@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from aix8pan.scraper import Scraper  # noqa: E402
+from aix8pan.pipeline.scraper import Scraper  # noqa: E402
 
 s = Scraper()
 r = s.scrape("/115/01-电影/专辑/浪浪山小妖怪 (2025) {tmdbid-1304434}",

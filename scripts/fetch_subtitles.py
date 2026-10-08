@@ -27,7 +27,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from check_sub_availability import BASE, UA, fetch, parse_entries, parse_search  # noqa: E402
@@ -332,7 +332,7 @@ def cmd_download() -> int:
 
 
 def cmd_upload() -> int:
-    from aix8pan.openlist import OpenListClient
+    from aix8pan.core.openlist import OpenListClient
     cfg = json.loads((Path(__file__).resolve().parent.parent / "config.json").read_text(
         encoding="utf-8"))["openlist"]
     client = OpenListClient(cfg["base_url"], cfg["username"], cfg["password"],

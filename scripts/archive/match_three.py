@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from aix8pan.config import load_config  # noqa: E402
-from aix8pan.tmdb import TMDBClient  # noqa: E402
+from aix8pan.core.tmdb import TMDBClient  # noqa: E402
 
 cfg = load_config()
 t = cfg["tmdb"]

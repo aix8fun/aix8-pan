@@ -25,7 +25,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
 BASE = "https://subhd.tv"
 SLEEP = 2.5

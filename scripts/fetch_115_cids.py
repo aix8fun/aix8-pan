@@ -34,7 +34,7 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
 SCAN = state_path("container_scan.json")
 OUT = state_path("115_cids.json")

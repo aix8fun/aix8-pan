@@ -27,9 +27,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from aix8pan import naming_spec as spec                      # noqa: E402
-from aix8pan.naming import NamingEngine, sanitize            # noqa: E402
-from aix8pan.parser import parse_media_name                  # noqa: E402
+from aix8pan.core import naming_spec as spec                      # noqa: E402
+from aix8pan.core.naming import NamingEngine, sanitize            # noqa: E402
+from aix8pan.core.parser import parse_media_name                  # noqa: E402
 
 SPEC_MD = ROOT / "SPEC.md"
 README_MD = ROOT / "README.md"

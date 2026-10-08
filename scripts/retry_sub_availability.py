@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 from check_sub_availability import BASE, OUT, fetch, parse_entries, parse_search  # noqa: E402
 
 SLEEP = 3.0

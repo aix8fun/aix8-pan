@@ -12,11 +12,11 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
 from aix8pan.config import load_config          # noqa: E402
-from aix8pan.openlist import OpenListClient     # noqa: E402
-from aix8pan.parser import parse_media_name     # noqa: E402
+from aix8pan.core.openlist import OpenListClient     # noqa: E402
+from aix8pan.core.parser import parse_media_name     # noqa: E402
 
 OUT = state_path("inbox.json")
 DIRS = ["/115/01-电影/0-待整理"]

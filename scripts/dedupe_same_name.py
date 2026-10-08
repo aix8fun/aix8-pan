@@ -36,7 +36,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from aix8pan.config import load_config
-from aix8pan.openlist import OpenListClient
+from aix8pan.core.openlist import OpenListClient
 
 MOV = "/115/01-电影"
 

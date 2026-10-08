@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
-from aix8pan.auditor import Auditor  # noqa: E402
+from aix8pan.config import state_path
+from aix8pan.pipeline.auditor import Auditor  # noqa: E402
 
 a = Auditor()
 cached = {r["path"] for r in

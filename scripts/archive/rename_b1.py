@@ -29,10 +29,10 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
-from aix8pan.openlist import OpenListClient  # noqa: E402
-from aix8pan.parser import QUALITY_TOKEN_RE  # noqa: E402
+from aix8pan.core.openlist import OpenListClient  # noqa: E402
+from aix8pan.core.parser import QUALITY_TOKEN_RE  # noqa: E402
 
 ROOT = "/115/01-电影"
 PLAN_PATH = state_path("rename_b1_plan.json")

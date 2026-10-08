@@ -25,8 +25,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from aix8pan.openlist import OpenListClient
-from aix8pan.tmdb import TMDBClient
+from aix8pan.core.openlist import OpenListClient
+from aix8pan.core.tmdb import TMDBClient
 from aix8pan.config import load_config
 
 TV_ROOT = "/115/02-剧集"

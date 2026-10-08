@@ -11,7 +11,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Optional
 
-from .config import CACHE_DIR
+from ..config import CACHE_DIR
 
 
 class TMDBError(RuntimeError):

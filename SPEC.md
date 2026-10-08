@@ -1,7 +1,7 @@
 # AIX8-Pan 命名规范 v2.2
 
 > 本规范**从用户 115 网盘既有 tMM 整理存量反向提炼**，不是凭空设计。
-> 代码里的唯一事实源是 `aix8pan/naming_spec.py`，本文档是它的自然语言说明。
+> 代码里的唯一事实源是 `aix8pan/core/naming_spec.py`，本文档是它的自然语言说明。
 > 任何命名疑问以 `naming_spec.py` 为准；两者不一致时改代码改文档。
 
 **最高优先级原则：少改名 / 零重命名。** 存量已合规的形态一律承认，绝不为了「更漂亮」而全库重命名。
@@ -16,7 +16,7 @@
 | 冻结日期 | 2026-10-07（电影）/ 2026-10-08（剧集） |
 | **已冻结范围** | **电影（movie）、剧集（tv）** —— 用户已确认满意，规则不再随讨论漂移 |
 | 草案范围 | 动画 / 纪录片 / 音乐 / 电子书（待逐条确认后冻结） |
-| 唯一事实源 | `aix8pan/naming_spec.py`（`SPEC_VERSION` / `SCOPE_STATUS` / `FROZEN_MOVIE_RULES`） |
+| 唯一事实源 | `aix8pan/core/naming_spec.py`（`SPEC_VERSION` / `SCOPE_STATUS` / `FROZEN_MOVIE_RULES`） |
 | 守门校验 | `python3 tests/check_spec.py`（破坏规则即 FAIL，退出码非 0） |
 
 ### 电影冻结条款（逐条）
@@ -36,7 +36,7 @@
 
 ### 变更流程（改冻结规则必须走完这 4 步）
 
-1. 改 `aix8pan/naming_spec.py`（唯一事实源）
+1. 改 `aix8pan/core/naming_spec.py`（唯一事实源）
 2. 同步本文档与 `SKILL.md` 的速查表
 3. 跑 `tests/check_spec.py` + `tests/test_parser_naming.py`（必须全绿）
 4. 跑 `scripts/run_audit.py /115/01-电影`，确认存量仍全合规（幂等）

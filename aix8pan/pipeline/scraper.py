@@ -26,10 +26,10 @@ from __future__ import annotations
 
 import html
 
-from . import naming_spec as spec
-from .config import load_config
-from .openlist import OpenListClient, OpenListError
-from .tmdb import TMDBClient, norm_meta
+from ..core import naming_spec as spec
+from ..config import load_config
+from ..core.openlist import OpenListClient, OpenListError
+from ..core.tmdb import TMDBClient, norm_meta
 
 # 旧式（无前缀）电影图片名 → 规范 artwork 关键字
 _LEGACY_MOVIE_ART = {

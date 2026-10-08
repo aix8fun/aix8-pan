@@ -37,10 +37,10 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
 from aix8pan.config import load_config          # noqa: E402
-from aix8pan.tmdb import TMDBClient             # noqa: E402
+from aix8pan.core.tmdb import TMDBClient             # noqa: E402
 
 SCAN = state_path("container_scan.json")
 OUT = state_path("tmdb_collections.json")

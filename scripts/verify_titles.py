@@ -14,10 +14,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
 from aix8pan.config import load_config
-from aix8pan.tmdb import TMDBClient, norm_meta
+from aix8pan.core.tmdb import TMDBClient, norm_meta
 
 BRACKET_RE = re.compile(r"[（(][^）)]*[）)]")
 STRIP_RE = re.compile(r"[\s\-–—_:,，.。·！!？?、\[\]（）()]")

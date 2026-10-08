@@ -21,13 +21,13 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from aix8pan.paths import state_path
+from aix8pan.config import state_path
 
-from aix8pan import naming_spec as spec
-from aix8pan.auditor import TMDB_ANY_RE, Auditor
-from aix8pan.naming import NamingEngine
-from aix8pan.parser import parse_media_name
-from aix8pan.planner import SEASON_DIR_RE
+from aix8pan.core import naming_spec as spec
+from aix8pan.pipeline.auditor import TMDB_ANY_RE, Auditor
+from aix8pan.core.naming import NamingEngine
+from aix8pan.core.parser import parse_media_name
+from aix8pan.pipeline.planner import SEASON_DIR_RE
 
 ROOTS = [
     ("/115/01-电影/合集", "合集"),
@@ -116,7 +116,7 @@ def scan_work(a: Auditor, eng: NamingEngine, w: str, root: str, cat: str) -> dic
 
     img_names = [e.get("name") or "" for e, _q in companions
                  if (e.get("name") or "").rsplit(".", 1)[-1].lower() in
-                 {x.lstrip(".") for x in __import__("aix8pan.parser", fromlist=["IMAGE_EXTS"]).IMAGE_EXTS}]
+                 {x.lstrip(".") for x in __import__("aix8pan.core.parser", fromlist=["IMAGE_EXTS"]).IMAGE_EXTS}]
     nfo_names = [e.get("name") or "" for e, _q in companions
                  if (e.get("name") or "").lower().endswith(".nfo")]
     sub_names = [e.get("name") or "" for e, _q in companions

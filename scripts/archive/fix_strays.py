@@ -27,7 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from aix8pan.openlist import OpenListClient  # noqa: E402
+from aix8pan.core.openlist import OpenListClient  # noqa: E402
 
 ROOT = "/115/01-电影"
 OP_SLEEP = 1.6          # 每次写操作间隔（防风控）

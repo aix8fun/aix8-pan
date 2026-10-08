@@ -28,11 +28,11 @@ from __future__ import annotations
 
 import re
 
-from . import naming_spec as spec
-from .config import load_config
-from .naming import NamingEngine
-from .openlist import OpenListClient
-from .parser import IMAGE_EXTS, QUALITY_TOKEN_RE, parse_media_name
+from ..core import naming_spec as spec
+from ..config import load_config
+from ..core.naming import NamingEngine
+from ..core.openlist import OpenListClient
+from ..core.parser import IMAGE_EXTS, QUALITY_TOKEN_RE, parse_media_name
 from .planner import SEASON_DIR_RE
 
 TMDB_ANY_RE = re.compile(r"\{\s*(tmdbid|tmdb)\s*-\s*(\d+)\s*\}", re.IGNORECASE)
@@ -285,7 +285,7 @@ class Auditor:
             if not p.year:
                 add("FILE_NO_YEAR", SEV_ERROR, f"电影文件名缺年份：{fname}", "补 (年份)")
             else:
-                from .parser import extract_tech_fields, render_tech
+                from ..core.parser import extract_tech_fields, render_tech
                 fields = extract_tech_fields(fname)
                 canonical = render_tech(fields)
                 if canonical and p.tech and canonical != p.tech:

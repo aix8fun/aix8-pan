@@ -10,10 +10,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from aix8pan.config import load_config
-from aix8pan.openlist import OpenListClient
-from aix8pan.parser import find_tmdb_id
-from aix8pan.scraper import Scraper
-from aix8pan.tmdb import TMDBClient
+from aix8pan.core.openlist import OpenListClient
+from aix8pan.core.parser import find_tmdb_id
+from aix8pan.pipeline.scraper import Scraper
+from aix8pan.core.tmdb import TMDBClient
 
 MOVIE_ROOT = "/115/01-电影"
 
