@@ -43,24 +43,24 @@ python3 tests/check_spec.py
 python3 tests/test_parser_naming.py
 
 # 4. 库审计（只读，报告偏差）
-python3 tests/run_audit.py /115/01-电影
+python3 scripts/run_audit.py /115/01-电影
 
 # 5. 端到端测试（在网盘沙盒内跑，结束自动清理）
 python3 tests/test_e2e_write.py
 
 # 6. 「合集 / 专辑」规范核对表（只读 → xlsx）
-python3 tests/scan_containers.py && python3 tests/make_report.py
+python3 scripts/scan_containers.py && python3 scripts/make_report2.py
 #    想要「目录链接」列（115 深链）再多跑一步：
 #    解密本机 Chrome 的 115 登录态换取各目录的 cid（只读，不碰网盘）
-<venv>/bin/python tests/fetch_115_cids.py && python3 tests/make_report.py
+<venv>/bin/python scripts/fetch_115_cids.py && python3 scripts/make_report2.py
 
 # 6b. TMDB × 115 对照表（分「合集 / 专辑」两个 sheet + 系列汇总）
-<venv>/bin/python tests/fetch_tmdb_collections.py   # TMDB 合集归属 + 成员 + 官网链接
-python3 tests/fetch_inbox.py                        # 只读列「0-待整理」，区分“没资源/没归位”
-python3 tests/make_report2.py                       # → 合集_专辑_TMDB核对表.xlsx
+<venv>/bin/python scripts/fetch_tmdb_collections.py   # TMDB 合集归属 + 成员 + 官网链接
+python3 scripts/fetch_inbox.py                        # 只读列「0-待整理」，区分“没资源/没归位”
+python3 scripts/make_report2.py                       # → 合集_专辑_TMDB核对表.xlsx
 
 # 7. 定向纠正：按核对表问题清单改名 + 补海报（无 --execute 只预览）
-python3 tests/fix_issues.py --execute
+python3 scripts/fix_issues.py --execute
 ```
 
 在 WorkBuddy 里用自然语言驱动即可，例如：

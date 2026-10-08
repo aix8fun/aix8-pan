@@ -39,7 +39,7 @@
 1. 改 `aix8pan/naming_spec.py`（唯一事实源）
 2. 同步本文档与 `SKILL.md` 的速查表
 3. 跑 `tests/check_spec.py` + `tests/test_parser_naming.py`（必须全绿）
-4. 跑 `tests/run_audit.py /115/01-电影`，确认存量仍全合规（幂等）
+4. 跑 `scripts/run_audit.py /115/01-电影`，确认存量仍全合规（幂等）
 
 > 冻结不是「不能改」，而是**改之前必须显式走完上面 4 步**——避免规则在讨论中悄悄漂移，
 > 导致已经整理好的库被重新命名一遍。
@@ -315,7 +315,7 @@ artwork 前缀取**主文件改名后的**公共前缀 —— 所以主文件归
 | **最终一致** | `move` 之后立刻 `rename` 会报 `object not found`（重试 6 秒仍不可靠） | 跨目录搬移时**先在原地改名再 `move`** |
 | **目录列表缓存** | 关键路径上必须 `refresh=true`，否则会拿到陈旧条目（曾导致「幽灵作品目录」） | 一律 `refresh=True` |
 
-> 已经产生的同名重复，用 `tests/dedupe_same_name.py` 检测与修复
+> 已经产生的同名重复，用 `scripts/dedupe_same_name.py` 检测与修复
 > （思路：下载可见条目 → 按名 `remove` 让藏着的浮出来 → 保留体积较大的一份回传）。
 > 注意**不能用改名探针检测** —— 见上表 `rename` 那条。
 
@@ -332,7 +332,7 @@ https://115.com/?cid=<cid>&offset=0&mode=wangpan
 **cid 是 115 的内部目录 ID，OpenList 完全拿不到**（`/api/fs/list`、`/api/fs/get`
 都不返回 id，连 `/api/fs/dirs` 也没有），所以只能走 115 官方接口自取。
 
-`tests/fetch_115_cids.py` 的做法：
+`scripts/fetch_115_cids.py` 的做法：
 
 1. **就地解密本机 Chrome 的 Cookie 库**（`~/Library/Application Support/Google/Chrome/
    <profile>/Cookies`，只读；AES 密钥取自 macOS 钥匙串的 *Chrome Safe Storage*，
