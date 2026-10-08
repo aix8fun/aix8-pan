@@ -1,0 +1,53 @@
+{
+  "openlist": {
+    "base_url": "https://your-openlist.example.com",
+    "username": "admin",
+    "password": "<your-password>",
+    "op_interval_ms": 700
+  },
+  "tmdb": {
+    "api_key": "<your-tmdb-api-key>",
+    "api_host": "https://tmdb.aws360.cn",
+    "image_host": "https://tmdb.aws360.cn",
+    "language": "zh-CN",
+    "request_interval_ms": 250
+  },
+  "paths": {
+    "movies": "/115/01-电影",
+    "tv": "/115/02-剧集",
+    "anime": "/115/03-动画",
+    "doc": "/115/04-纪录片",
+    "todo": "/115/AA-TODO",
+    "tv_rural": "/115/12-乡村剧"
+  },
+  "naming": {
+    "movie_folder_template": "{title} ({year}) {tmdbid_tag}",
+    "tv_folder_template": "{title} ({year}) {tmdbid_tag}",
+    "season_folder_template": "Season {season:02d}",
+    "movie_file_template": "{title} {original} ({year}) [{tech}]",
+    "tv_file_template": "{title} - {season_ep} - {episode_title} [{tech}]",
+    "episode_title_in_file": true,
+    "normalize_artwork": true,
+    "keep_original_title": true
+  },
+  "containers": {
+    "series_suffix": "（系列）",
+    "mainline_suffix": "（主线）",
+    "fixed": [
+      "0-待整理",
+      "合集",
+      "专辑"
+    ],
+    "inbox": [
+      "0-待整理",
+      "待整理",
+      "AA-TODO"
+    ],
+    "drain_inbox": true,
+    "include_containers": false
+  },
+  "limits": {
+    "max_execute_batch": 200,
+    "confirm_required": true
+  }
+}

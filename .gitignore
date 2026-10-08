@@ -1,0 +1,16 @@
+# 敏感信息：真实配置不入库（用 config.example.json 做模板）
+config.json
+
+# 运行时产物
+data/cache/
+data/state/
+data/plans/
+__pycache__/
+*.pyc
+.DS_Store
+
+# 生成的核对表（每次管线产物，不入库）
+*.xlsx
+
+# 会话工作区
+.workbuddy/
