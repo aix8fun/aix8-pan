@@ -111,6 +111,9 @@ class Executor:
                     raise RuntimeError(f"移动失败: {act['names']}")
         elif kind == "rename":
             self._rename_with_retry(act["path"], act["new_name"])
+        elif kind == "remove":
+            # 剧集形态统一：删除集级伴随 / 剧根非标准件（planner 已按 ≤40 分批）
+            self._remove_with_retry(act["dir"], act["names"])
         elif kind == "cleanup_empty_dir":
             # 网盘目录状态存在最终一致性，删除前先等一拍再强刷确认真的为空
             time.sleep(1.0)
@@ -120,6 +123,29 @@ class Executor:
             # 非空则不动（安全）
         else:
             raise ValueError(f"未知动作: {kind}")
+
+    def _remove_with_retry(self, dir_path: str, names: list[str]) -> None:
+        """批量删除 + 失败降级。
+
+        115 对大批量 remove 的响应经常超过 60s 读超时（服务端可能已删/部分删）。
+        整批失败 → 逐个重试；「不存在 / not found」视为已删（幂等）。
+        """
+        try:
+            self.client.remove(dir_path, names)
+            return
+        except OpenListError:
+            pass
+        failed: list[str] = []
+        for n in names:
+            try:
+                self.client.remove(dir_path, [n])
+            except OpenListError as e:
+                msg = str(e).lower()
+                if "not exist" in msg or "not found" in msg or "exist" in msg:
+                    continue  # 已被整批调用删掉
+                failed.append(n)
+        if failed:
+            raise RuntimeError(f"删除失败 {dir_path}: {failed[:5]}")
 
     def _rename_with_retry(self, path: str, new_name: str, attempts: int = 4) -> None:
         """改名 + 失败重试（每次重试前强制刷新父目录索引）。

@@ -25,6 +25,10 @@
     "normalize_artwork": true,
     "keep_original_title": true
   },
+  "organize": {
+    "_hint": "剧集形态统一（默认开）：季目录只留视频+字幕，剧根只留标准5件套（poster/fanart/clearlogo/seasonNN-poster/tvshow.nfo）；整理时自动删除下载源自带的集级 nfo/-thumb、season.nfo 及 banner/thumb/background/theme.mp3 等旧工具残料，刮削时自动重写旧版 tvshow.nfo（tMM 富信息版保留）。不想删可设 false",
+    "tv_purge_companions": true
+  },
   "containers": {
     "series_suffix": "（系列）",
     "mainline_suffix": "（主线）",

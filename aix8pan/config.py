@@ -131,6 +131,12 @@ def load_config(path: str | os.PathLike | None = None) -> dict:
             "tv_rural": "/115/12-乡村剧",
         },
         "naming": _default_naming(),
+        "organize": {
+            # 剧集形态统一（2026-10-09）：季目录只留视频+字幕，剧根只留标准
+            # 5 件套（poster/fanart/clearlogo/seasonNN-poster/tvshow.nfo）。
+            # 整理时自动删除下载源自带的集级 nfo/-thumb 和旧工具残料。
+            "tv_purge_companions": True,
+        },
         "containers": {
             "series_suffix": "（系列）",
             "mainline_suffix": "（主线）",

@@ -27,14 +27,43 @@ from ..core import naming_spec as spec
 from ..core.naming import NamingEngine, latin_title
 from ..core.openlist import OpenListClient
 from ..core.parser import (
-    IMAGE_EXTS, ParsedName, looks_organized_folder, parse_media_name,
-    violates_filename_spec,
+    IMAGE_EXTS, ParsedName, SEASON_EP_RE, looks_organized_folder,
+    parse_media_name, violates_filename_spec,
 )
 
 SEASON_DIR_RE = re.compile(r"^(?:Season|S)\s*\d{1,2}$|^第\s*\d{1,2}\s*季$", re.IGNORECASE)
 # 旧式 TMDB 标识写法（{tmdb-N}），规范应为 {tmdbid-N}
 LEGACY_TMDB_TAG_RE = re.compile(r"\{\s*tmdb\s*-\s*(\d+)\s*\}", re.IGNORECASE)
 from ..core.tmdb import TMDBClient, norm_meta
+
+# ── 剧集形态统一规则（2026-10-09 用户拍板，对齐 02-剧集 已统一形态）────
+# 目标形态：季目录只留视频（+字幕）；剧根只留标准 5 件套
+#   poster.jpg / fanart.jpg / clearlogo.png / seasonNN-poster.jpg / tvshow.nfo
+# 下载源自带的集级 nfo / -thumb.jpg / season.nfo、旧工具遗留的
+# banner / thumb / background / backdrop / theme.mp3 一律在整理时删除。
+VIDEO_EXTS = (".mp4", ".mkv", ".avi", ".ts", ".rmvb", ".m2ts", ".mov", ".wmv", ".iso", ".mpg")
+SUBTITLE_EXTS = (".srt", ".ass", ".ssa", ".sub", ".idx", ".sup", ".vtt")
+# 剧根历史遗留非标准件（下载源刮削残料 / 旧工具产物）
+_TV_ROOT_PURGE_RE = re.compile(
+    r"^(?:banner|thumb|background|backdrop)\.(?:jpg|jpeg|png|webp)$"
+    r"|^season\d{1,2}-(?:banner|thumb)\.(?:jpg|jpeg|png|webp)$"
+    r"|^theme\.mp3$", re.IGNORECASE)
+
+
+def is_tv_purge_file(fname: str, in_season_dir: bool) -> bool:
+    """剧集统一规则下的待删伴随文件。
+
+    - 季目录内：一切非视频、非字幕文件（集级 nfo / -thumb.jpg / season.nfo…）
+    - 剧根：历史遗留非标准件（banner / thumb / background / backdrop /
+      seasonNN-banner / seasonNN-thumb / theme.mp3）
+    字幕永远保留；电影不受此规则影响（传入时调用方需自行判断 kind）。
+    """
+    n = fname.strip().lower()
+    if n.endswith(SUBTITLE_EXTS):
+        return False
+    if in_season_dir:
+        return not n.endswith(VIDEO_EXTS)
+    return bool(_TV_ROOT_PURGE_RE.match(n))
 
 
 class Planner:
@@ -50,6 +79,9 @@ class Planner:
             t["request_interval_ms"])
         self.naming = NamingEngine(self.cfg.get("naming") or {})
         self.paths = self.cfg.get("paths") or {}
+        # 剧集形态统一（默认开）：季目录纯视频、剧根标准 5 件套
+        self.tv_purge = bool((self.cfg.get("organize") or {})
+                             .get("tv_purge_companions", True))
 
     # ---------- 对外主入口 ----------
 
@@ -371,6 +403,8 @@ class Planner:
             "tmdb_id": tmdb_id, "kind": kind, "meta": meta,
             "target_folder": target_folder, "target_path": target_path,
             "files": [],
+            # 剧集形态统一：待删除的伴随文件（集级 nfo/thumb、剧根非标准件）
+            "purge": [],
             # 未归类文件（.txt/压缩包/样本…）：保持原位，因此**禁止**整目录搬移
             "others": [e["name"] for e, _ in others],
         }
@@ -384,7 +418,16 @@ class Planner:
                     if key in ep_titles:
                         continue
                     try:
-                        ed = self.tmdb.episode_detail(tmdb_id, p.season, p.episode)
+                        ed = None
+                        for attempt in range(2):   # 瞬时故障重试一次
+                            try:
+                                ed = self.tmdb.episode_detail(
+                                    tmdb_id, p.season, p.episode)
+                                break
+                            except Exception:
+                                if attempt:  # 第二次仍失败 → 认命
+                                    raise
+                                time.sleep(1.0)
                         ep_titles[key] = (ed or {}).get("name") or ""
                     except Exception:
                         ep_titles[key] = ""
@@ -464,6 +507,15 @@ class Planner:
             item = {"name": fname, "cur_dir": cur_dir, "ext": p.ext}
             if e.get("_dir_name"):
                 item["_dir_name"] = e["_dir_name"]  # 所在季目录名（空目录清理用）
+
+            # 剧集形态统一：待删文件直接入 purge 清单，不参与搬移/改名
+            # （不受 needs_work 影响 —— 已就位的组同样要清掉源残料）
+            if kind == "tv" and self.tv_purge and \
+                    is_tv_purge_file(fname, bool(e.get("_season_dir_name"))):
+                group["purge"].append({"name": fname, "cur_dir": cur_dir,
+                                       "_dir_name": e.get("_dir_name")})
+                continue
+
             dst_default = self._relocate(cur_dir, group_dir, target_path)
 
             art_kind = spec.parse_artwork(fname) if p.ext in IMAGE_EXTS else ""
@@ -473,7 +525,16 @@ class Planner:
                     fname, "" if kind == "tv" else _stem_for(fname))
                 item.update({"new_name": new_name, "dst_dir": dst_default,
                              "kind": "artwork"})
-            elif p.ext == ".nfo" and normalize_artwork and needs_work:
+            elif p.ext == ".nfo" and normalize_artwork and needs_work \
+                    and not SEASON_EP_RE.search(fname) \
+                    and cur_dir.rstrip("/") == group_dir.rstrip("/"):
+                # 只归一「剧根/电影根」的散 nfo（剧集 → tvshow.nfo 放剧根）。
+                # 单集 nfo（SxxExx 或季目录内的 Exx 式）是集的伴随文件，走下方
+                # main_stem 分支：跟随同名集文件进规范季目录并同步改名。
+                # 季目录内的 season.nfo 等游离 nfo 不归一（保持原位原相对路径，
+                # 与已整理库的现状一致）。
+                # 旧逻辑无差别归一会让一季几十个单集 nfo 全变 tvshow.nfo 堆进
+                # 同一个目录（115 允许同名共存，列表还会折叠，极难清理）。
                 new_name = spec.nfo_name(kind, "" if kind == "tv" else _stem_for(fname))
                 if new_name != fname:
                     item.update({"new_name": new_name, "dst_dir": dst_default,
@@ -527,12 +588,20 @@ class Planner:
     def _relocate(cur_dir: str, group_dir: str, target_path: str) -> str:
         """保持文件在组内的相对位置，把父目录换成目标路径。
 
-        group_dir/Season 1/x.nfo → target_path/Season 1/x.nfo
+        group_dir/Season 1/x.nfo → target_path/Season 01/x.nfo   ← 季目录名归一
         group_dir/x.nfo          → target_path/x.nfo
         """
         base = group_dir.rstrip("/")
         cur = (cur_dir or base).rstrip("/")
         rel = cur[len(base):].strip("/") if cur.startswith(base) else ""
+        if rel and "/" not in rel:
+            # 单层季目录（Season 1 / S2 / 第3季）→ 规范名 Season NN，
+            # 避免为游离伴随文件保留旧式季目录
+            m = re.match(r"^(?:Season|S)\s*(\d{1,2})$|^第\s*(\d{1,2})\s*季$",
+                         rel, re.IGNORECASE)
+            if m:
+                n = int(m.group(1) or m.group(2))
+                rel = f"Season {n:02d}"
         return target_path.rstrip("/") + ("/" + rel if rel else "")
 
     @staticmethod
@@ -624,6 +693,9 @@ class Planner:
             src_dir = g["source_dir"].rstrip("/")
             dst_dir = g["target_path"].rstrip("/")
             relocatable = bool(g["files"]) and src_dir != dst_dir and not g.get("others")
+            # 有待删伴随文件时不能整目录搬走（否则残料会被一起带进目标目录）
+            if g.get("purge"):
+                relocatable = False
             if relocatable:
                 for f in g["files"]:
                     d = f["dst_dir"].rstrip("/")
@@ -692,6 +764,16 @@ class Planner:
                                     "path": f"{f['dst_dir'].rstrip('/')}/{f['name']}",
                                     "new_name": f["new_name"], "status": "pending"})
 
+        # ③′ 剧集形态统一：删除集级伴随 / 剧根非标准件（分批 ≤40 防读超时）
+        for g in plan["groups"]:
+            by_dir: dict[str, list[str]] = {}
+            for f in g.get("purge") or []:
+                by_dir.setdefault(f["cur_dir"].rstrip("/"), []).append(f["name"])
+            for d, names in sorted(by_dir.items()):
+                for i in range(0, len(names), 40):
+                    actions.append({"action": "remove", "dir": d,
+                                    "names": names[i:i + 40], "status": "pending"})
+
         # ④ 空目录清理（只清理「确有文件被搬走」且已搬空的来源目录）
         #   扫描根一般不清（防误删）；但整组搬迁（target_path 变了）时，
         #   根目录剩下的只是空壳，连根带搬空的季子目录一起清（内层先清）。
@@ -701,17 +783,22 @@ class Planner:
             relocated = (g.get("target_path") or "").rstrip("/") != src_dir
             if is_scan_root and (not relocated or g.get("others")):
                 continue
-            if not any(f.get("op") == "move" for f in g["files"]):
+            if not any(f.get("op") == "move" for f in g["files"]) and not g.get("purge"):
                 continue  # 没有文件离开该目录 → 不做任何清理
-            planned = {f["name"] for f in g["files"]} | {f.get("_dir_name") for f in g["files"]}
+            planned = ({f["name"] for f in g["files"]}
+                       | {f.get("_dir_name") for f in g["files"]}
+                       | {f["name"] for f in g.get("purge") or []})
             try:
                 others = {e["name"] for e in (self.client.list_all(src_dir, refresh=True) or [])}
             except Exception:
                 continue  # 目录已不存在 → 无需清理
             if others and planned and others.issubset(planned):
                 # 先清搬空的季子目录（executor 只删「验证为空」的目录，安全）
-                for sub in sorted({f.get("_dir_name") for f in g["files"]
-                                   if f.get("op") == "move" and f.get("_dir_name")}):
+                for sub in sorted(
+                        {f.get("_dir_name") for f in g["files"]
+                         if f.get("op") == "move" and f.get("_dir_name")}
+                        | {f.get("_dir_name") for f in g.get("purge") or []
+                           if f.get("_dir_name")}):
                     actions.append({"action": "cleanup_empty_dir", "parent": src_dir,
                                     "name": sub, "status": "pending"})
                 parent = src_dir.rsplit("/", 1)[0]
@@ -728,6 +815,7 @@ class Planner:
             "moves": sum(1 for a in actions if a["action"] == "move"),
             "renames": sum(1 for a in actions if a["action"] == "rename"),
             "mkdirs": sum(1 for a in actions if a["action"] == "mkdir"),
+            "purges": sum(len(a["names"]) for a in actions if a["action"] == "remove"),
             "already_ok": n_skip,
             "unmatched": len(plan["unmatched"]),
             "skipped": len(plan["skips"]),

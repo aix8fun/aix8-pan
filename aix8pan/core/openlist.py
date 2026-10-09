@@ -154,8 +154,11 @@ class OpenListClient:
         self._request("POST", "/api/fs/rename", {"path": path, "name": new_name})
 
     def move(self, src_dir: str, names: list[str], dst_dir: str) -> None:
+        # 批量搬移大目录（数百集）时 OpenList 端处理可达数分钟，
+        # 默认 60s 读超时会被误判失败（实际服务端仍在执行），放宽到 600s。
         self._request("POST", "/api/fs/move", {
-            "src_dir": src_dir, "dst_dir": dst_dir, "names": names})
+            "src_dir": src_dir, "dst_dir": dst_dir, "names": names},
+            timeout=600)
 
     def copy(self, src_dir: str, names: list[str], dst_dir: str) -> None:
         self._request("POST", "/api/fs/copy", {

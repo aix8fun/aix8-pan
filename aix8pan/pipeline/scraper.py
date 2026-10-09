@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import html
 import re
+import urllib.request
 
 from ..core import naming_spec as spec
 from ..config import load_config
@@ -43,6 +44,22 @@ _LEGACY_MOVIE_NFO = {"movie.nfo"}
 # Season 目录名（Season 01 / S1 / 第1季 …）→ 季号
 _SEASON_DIR_RE = re.compile(
     r"^(?:Season|S)\s*0*(\d{1,2})$|^第\s*0*(\d{1,2})\s*季$", re.IGNORECASE)
+
+
+def _nfo_outdated(xml: str) -> bool:
+    """tvshow.nfo 是否为旧工具生成的残缺版，需要重写。
+
+    分类依据（2026-10-09 全库盘点结论）：
+    - 含 <seasoncount> → 本项目模板（最新）
+    - 含 <actor> / <credits> → tMM 富信息版（含演职员表，信息量更大，保留）
+    - 两者皆无 → 旧工具残缺版（如 season=-1、以 imdb 为默认 ID），
+      媒体库识别会错乱 → 重写。电影 nfo 不走此判定。
+    """
+    if "<seasoncount>" in xml:
+        return False
+    if "<actor" in xml or "<credits>" in xml:
+        return False
+    return True
 
 
 class Scraper:
@@ -127,8 +144,19 @@ class Scraper:
             put_art("clearlogo", meta["logo_path"])
 
         # NFO：电影与主文件同名；剧集 tvshow.nfo
-        put(spec.nfo_name(kind, media_stem), self._build_nfo(meta, kind).encode("utf-8"),
-            force_now=force_nfo)
+        # 剧集：已存在的 tvshow.nfo 若是旧工具残缺版（无 seasoncount 也无
+        # 演职员表）→ 自动重写为项目模板；tMM 富信息版保留（信息不降级）
+        force_rewrite = False
+        nfo_name = spec.nfo_name(kind, media_stem)
+        if kind == "tv" and nfo_name in names and not (force or force_nfo):
+            try:
+                link = self.client.get_download_url(f"{work_dir.rstrip('/')}/{nfo_name}")
+                xml = urllib.request.urlopen(link, timeout=60).read().decode("utf-8", "replace")
+                force_rewrite = _nfo_outdated(xml)
+            except Exception:
+                pass  # 下载失败 → 按老规矩「已存在则跳过」
+        put(nfo_name, self._build_nfo(meta, kind).encode("utf-8"),
+            force_now=force_nfo or force_rewrite)
 
         # 剧集：季海报（放剧集根目录，seasonNN-poster.jpg）
         # 只刮**本地实际存在**的季 —— TMDB 可能把续作并成同剧的 S2
