@@ -20,7 +20,7 @@ marketplace/
 
 ## 启动方式：git 直装（无需 PyPI）
 
-`mcp.json` 使用 `uvx --from git+https://github.com/aix8fun/aix8-pan@v1.1.0 aix8-pan`，
+`mcp.json` 使用 `uvx --from git+https://github.com/aix8fun/aix8-pan@v1.2.0 aix8-pan`，
 用户机器只需装有 `uv`，无需 pip/PyPI。**发新版时**：打新 tag → 更新本文件
 里的 tag 引用 → 重新提交审核。
 
@@ -33,7 +33,7 @@ marketplace/
 - [x] 真实仓库地址：github.com/aix8fun/aix8-pan（token-schema docUrl 指向 README 部署引导）
 - [x] 分发行 SKILL.md：`skills/aix8-pan/SKILL.md`（无本机绝对路径；命名规范以 naming_spec 工具为唯一标准）
 - [x] 图标：云 + 播放键 App 风格（marketplace 尺寸 64px 下清晰可辨）
-- [x] 推送 tag `v1.1.0` 到仓库（mcp.json 引用了它，已验证 ls-remote 可见）
+- [x] 推送 tag `v1.2.0` 到仓库（mcp.json 引用了它，已验证 ls-remote 可见）
 - [ ] 按官方「提交前检查」自查后，将本目录打包提交 WorkBuddy 团队审核
       （开放平台：open.workbuddy.cn，审核通过后通常 10–15 分钟内同步市场）
 

@@ -7,7 +7,7 @@
   "description_en": "115 cloud drive AI assistant and media library organizer: list, search, download links, plus movie/TV renaming, scraping and auditing.",
   "source": "aix8-pan",
   "type": "mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "auth_mode": "token",
   "minWorkbuddyVersion": "4.23.0",
   "examples_zh": [

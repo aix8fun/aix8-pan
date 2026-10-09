@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aix8-pan"
-version = "1.1.0"
+version = "1.2.0"
 description = "115 个人网盘 AI 助手 + 影视资源整理刮削工具（OpenList 桥接 + TMDB）"
 readme = "README.md"
 requires-python = ">=3.11"
